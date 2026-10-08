@@ -1,0 +1,2073 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Projection Table Inventory & Grain Analysis</title>
+<!--
+  HOW TO ADD AN ENTITY
+  Add an object to the ENTITIES array at the bottom (copy dim_staff). The nav, the index card and the
+  section are all rendered from it. An entity supplies: silver children (+ optional grandchild),
+  association inputs, a sim() that returns row counts per stage, and a few findings/links.
+-->
+<style>
+:root{
+  --ground:#F5F7FA;--surface:#FFFFFF;--surface-2:#EBEFF5;--sunk:#E4EAF2;
+  --ink:#0F1720;--ink-2:#37485A;--muted:#586B7F;--faint:#8092A4;
+  --rule:#DBE2EB;--rule-2:#C3CEDB;
+  --accent:#2F5FA8;--accent-ink:#24497F;--accent-wash:#E5EDF8;
+  --bad:#B4231F;--bad-wash:#FBEAE8;--warn:#B45309;--warn-wash:#FDF1E1;--ok:#15803D;--ok-wash:#E4F5EA;
+  --l-silver:#8B97A3;--l-stage:#5B87C4;--l-conf:#D9A400;--l-derived:#B98A00;--l-plat:#8267A8;--l-api:#1F7A6B;--l-temp:#5B87C4;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0C1218;--surface:#141D26;--surface-2:#1A252F;--sunk:#0F1922;
+  --ink:#E3EBF3;--ink-2:#BECDDA;--muted:#8496A7;--faint:#647689;
+  --rule:#22303B;--rule-2:#2F404E;
+  --accent:#7BA7E8;--accent-ink:#A5C4F2;--accent-wash:#152740;
+  --bad:#F87171;--bad-wash:#2A1719;--warn:#F0A93B;--warn-wash:#2B2113;--ok:#4ADE80;--ok-wash:#112619;
+  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;}}
+:root[data-theme="dark"]{
+  --ground:#0C1218;--surface:#141D26;--surface-2:#1A252F;--sunk:#0F1922;
+  --ink:#E3EBF3;--ink-2:#BECDDA;--muted:#8496A7;--faint:#647689;
+  --rule:#22303B;--rule-2:#2F404E;
+  --accent:#7BA7E8;--accent-ink:#A5C4F2;--accent-wash:#152740;
+  --bad:#F87171;--bad-wash:#2A1719;--warn:#F0A93B;--warn-wash:#2B2113;--ok:#4ADE80;--ok-wash:#112619;
+  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;margin:0;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h2{font-family:var(--mono);font-size:26px;letter-spacing:-.02em;font-weight:600}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+.lede{color:var(--muted);max-width:70ch;margin:10px 0 0;font-size:16.5px}
+p{margin:10px 0 0;max-width:72ch}
+code{font-family:var(--mono);font-size:.88em}
+a{color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+section{padding:32px 0;border-top:1px solid var(--rule)}
+
+.top{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--ground) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+.top .wrap{display:flex;align-items:center;gap:12px;height:50px;overflow-x:auto;white-space:nowrap}
+.brand{font-family:var(--mono);font-weight:600;font-size:14px}
+.navlink{font-family:var(--mono);font-size:12.5px;color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid transparent}
+.navlink:hover,.navlink[aria-current="true"]{color:var(--ink);background:var(--surface-2);border-color:var(--rule)}
+.sp{flex:1}
+.btn{font-family:var(--mono);font-size:12px;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-radius:6px;padding:5px 10px;cursor:pointer}
+.btn:hover{background:var(--surface-2)}
+
+.mast{padding:28px 0 0}
+.mast h1{font-family:var(--mono);font-size:clamp(30px,5vw,46px);letter-spacing:-.04em;font-weight:600;line-height:1.05}
+.eidx{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:14px}
+.ecard{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:12px 16px}
+.ecard:hover{border-color:var(--accent);background:var(--accent-wash)}
+.ecard .t{font-family:var(--mono);font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.ecard .lyr{font-size:10px;padding:1px 8px}
+.ecard .s{font-size:13.5px;color:var(--muted);margin-top:3px}
+.ecard.add{border-style:dashed;color:var(--muted)}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--rule-2);background:var(--surface-2);color:var(--ink-2)}
+.pill.accent{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink)}
+
+/* equation */
+.eq{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-top:18px;font-family:var(--mono);font-size:13.5px}
+.eq b{font-size:18px}
+.eq .op{color:var(--faint)}
+.eq .eqlab{font-family:var(--sans);font-size:16px;font-weight:600;color:var(--ink-2);margin-right:8px}
+.eq .st{border-bottom:3px solid var(--c);padding-bottom:1px}
+
+/* diagram */
+.dwrap{margin-top:14px;overflow-x:auto;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+.canvas{position:relative;min-width:1020px;padding:16px 18px 18px}
+svg.wires{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.cols{position:relative;display:grid;grid-template-columns:1.1fr 64px 1.25fr 64px 1.05fr 64px 1.25fr;align-items:start}
+.col{display:flex;flex-direction:column;gap:6px;align-self:stretch;justify-content:flex-start}
+.col.mid{justify-content:flex-start}
+.ch{border-top:4px solid var(--c);padding:6px 0 8px}
+.ch b{font-family:var(--mono);font-size:13px;display:block}
+.ch span{font-size:12px;color:var(--muted);line-height:1.3;display:block}
+.gap{display:flex;justify-content:center;padding-top:8px}
+.gap span{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-align:center;line-height:1.2;background:var(--surface-2);border:1px solid var(--rule);border-radius:999px;padding:2px 7px;height:fit-content}
+.box{position:relative;z-index:1;font-family:var(--mono);font-size:11.5px;line-height:1.3;padding:5px 8px;border:1px solid var(--rule-2);border-radius:6px;background:var(--sunk);color:var(--ink-2);cursor:pointer;transition:opacity .15s;overflow-wrap:anywhere}
+.box small{display:block;color:var(--faint);font-size:10.5px}
+.box.p{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.box.stg{border-left:4px solid var(--l-stage)}
+.box.cnf{border-left:4px solid var(--l-conf)}
+.box.drv{border-left:4px solid var(--l-derived);background:var(--ok-wash);border-color:var(--ok)}
+.box.jn{border-left:4px solid var(--accent)}
+.box.jn.derived{border-left-color:var(--l-derived);border-style:dashed}
+.box.jn.ref{border-left-color:var(--faint)}
+.box.jn.unused{opacity:.55}
+.box.more{cursor:default;border-style:dashed;background:transparent;color:var(--muted)}
+.grp{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin:6px 0 -2px}
+.grp i{font-style:normal;color:var(--ink-2)}
+.grp.jg{margin-top:12px;padding-top:8px;border-top:1px dashed var(--rule-2)}
+.dim{opacity:.14}
+path.w{fill:none;stroke:var(--rule-2);stroke-width:1.2;transition:opacity .15s}
+path.w.s{stroke:var(--l-stage);opacity:.5}
+path.w.c{stroke:var(--l-silver);opacity:.7}
+path.w.f{stroke:var(--l-conf);opacity:.7}
+path.w.j{stroke:var(--accent);opacity:.28}
+path.w.win{stroke:var(--ok);stroke-width:2.2;opacity:.95}
+path.w.lose{stroke:var(--bad);stroke-dasharray:3 3;opacity:.45}
+path.w.on{stroke-width:2.4;opacity:1}
+.note{font-size:14px;color:var(--ink-2);margin-top:12px}
+.note b{color:var(--ink)}
+.why{margin-top:14px;background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--l-derived);border-radius:10px;padding:12px 18px}
+.why .pill.layer{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink);margin-left:4px}
+.why .pill.solved{background:var(--ok-wash);border-color:var(--ok);color:var(--ok);font-weight:600}
+.why .ftags{margin:2px 0 6px}
+.why p.fdesc{margin:6px 0 0;font-size:14px;color:var(--ink-2);max-width:92ch}
+.sqllinks{margin-top:14px;font-size:14px;color:var(--ink-2)}
+.sqllinks.sublinks{margin-top:6px}
+.why h3{font-family:var(--mono);font-size:14px;margin:0 0 6px}
+.why ol{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--ink-2);max-width:92ch}
+.why li{margin:8px 0}
+.why pre{margin:6px 0 0;padding:8px 12px;background:var(--sunk);border:1px solid var(--rule);border-radius:6px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.5;color:var(--ink-2)}
+.subh{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin:40px 0 4px;padding-top:20px;border-top:1px solid var(--rule)}
+.subh.tg{cursor:pointer;border-radius:8px;padding:20px 8px 8px;margin-left:-8px;margin-right:-8px;user-select:none}
+.subh.tg:hover{background:var(--surface-2)}
+.subh .chev{font-family:var(--mono);color:var(--faint);font-size:13px;display:inline-block}
+.subh[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.subh .n{font-family:var(--mono);color:var(--faint);font-size:13px}
+.subh h3{font-family:var(--mono);font-size:19px}
+.subh p{flex-basis:100%;margin:0;color:var(--muted);font-size:14.5px}
+.prop{margin-top:14px}
+.pcard{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:14px 18px;margin-top:14px}
+.pcard h4{font-family:var(--mono);font-size:13.5px;margin:0 0 6px}
+.pcard p{font-size:14px;color:var(--ink-2);margin:6px 0 0;max-width:92ch}
+.etitle{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.lyr{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-left:4px solid var(--c);border-radius:6px;padding:3px 10px}
+.clegend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:10px;font-size:12.5px;color:var(--ink-2)}
+.clegend .lt{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.chip{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--rule-2)}
+.s-conf{background:var(--l-conf)}.s-assoc{background:var(--l-stage)}.s-ref{background:var(--l-silver)}
+.s-edo{background:var(--l-plat)}.s-gen{background:var(--faint)}.s-none{background:transparent;border-style:dashed}
+.csum{font-size:14px;color:var(--ink-2);margin:10px 0 0;max-width:110ch}
+.cwrap{overflow-x:auto;margin-top:12px;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+.ccanvas{position:relative;min-width:900px;padding:14px 16px 16px}
+svg.cwires{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.cgrid2{position:relative;display:grid;grid-template-columns:minmax(0,1.35fr) 120px minmax(0,.7fr);align-items:stretch}
+.ch2{border-top:4px solid var(--rule-2);padding:6px 0 8px}
+.ch2 b{font-family:var(--mono);font-size:13px;display:block}
+.ch2 span{font-size:12px;color:var(--muted)}
+.ctable{display:flex;flex-direction:column}
+.crow2{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:2px 0;padding:3px 8px;border:1px solid var(--rule-2);border-left:4px solid var(--c,var(--rule-2));border-radius:6px;background:var(--sunk);cursor:pointer;transition:opacity .15s}
+.crow2 .cn{font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap}
+.crow2 .src{font-size:11.5px;color:var(--muted);text-align:right;line-height:1.25}
+.crow2.unread .cn{font-weight:500;color:var(--ink-2)}
+.crow2.t-conf{--c:var(--l-conf)}.crow2.t-assoc{--c:var(--l-stage)}.crow2.t-ref{--c:var(--l-silver)}
+.crow2.t-edo{--c:var(--l-plat)}.crow2.t-gen{--c:var(--faint)}
+.crow2.t-none{--c:var(--faint);border-style:dashed;background:transparent}
+.fanpill{font-family:var(--sans);font-weight:500;font-size:10px;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-radius:999px;padding:0 6px;margin-left:4px}
+.cusers{display:flex;flex-direction:column}
+.ulist{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:10px;padding-top:6px}
+.cuser{position:relative;z-index:1;padding:8px 10px;border:1px solid var(--rule-2);border-left:4px solid var(--c);border-radius:8px;background:var(--surface);cursor:pointer;transition:opacity .15s}
+.cuser b{display:block;font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
+.cuser small{display:block;font-size:11px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}
+.cuser.k-api{--c:var(--l-api)}.cuser.k-derived{--c:var(--l-derived)}.cuser.k-platinum{--c:var(--l-plat)}.cuser.k-temp{--c:var(--l-temp)}
+.crow2.dim,.cuser.dim{opacity:.15}
+path.cw{fill:none;stroke-width:1.1;opacity:.32;transition:opacity .15s}
+path.cw.w-api{stroke:var(--l-api)}path.cw.w-derived{stroke:var(--l-derived)}path.cw.w-platinum{stroke:var(--l-plat)}path.cw.w-temp{stroke:var(--l-temp)}
+path.cw.on{stroke-width:2.2;opacity:1}
+path.cw.dim{opacity:.04}
+.cnote{margin-top:12px;font-size:14px;color:var(--ink-2)}
+.back{font-family:var(--mono);font-size:11.5px;text-decoration:none}
+.nsub{color:var(--muted);font-size:14.5px;margin:6px 0 0}
+.ncard{margin-top:18px;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:4px 20px}
+.nrow{display:grid;grid-template-columns:200px minmax(0,1fr);gap:6px 24px;padding:14px 0;border-top:1px solid var(--rule)}
+.nrow:first-child{border-top:0}
+.nkey{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-top:3px}
+.nval{font-size:14.5px;color:var(--ink-2);white-space:pre-line;max-width:100ch;overflow-wrap:anywhere}
+.nval.nstrat{border-left:4px solid var(--c);padding-left:10px;color:var(--ink)}
+.nnone{color:var(--faint)}
+.nval.nbullets{white-space:normal}
+.nbul{margin:0;padding-left:18px}
+.nbul li{margin:4px 0}
+@media(max-width:700px){.nrow{grid-template-columns:1fr}}
+a.wtl.nl{background:var(--surface);border-color:var(--rule-2);color:var(--ink-2)}
+a.wtl.nl:hover{background:var(--surface-2);color:var(--ink);border-color:var(--rule-2)}
+.hsec{margin-top:40px}
+.hsec h2{font-size:22px}
+.hsub{font-family:var(--mono);font-size:17px;font-weight:600;margin:26px 0 0;padding-top:18px;border-top:1px solid var(--rule)}
+.hsec h2 + .hsub{margin-top:12px;padding-top:0;border-top:0}
+.h4s{font-family:var(--mono);font-size:13.5px;font-weight:600;margin:20px 0 0;color:var(--ink-2)}
+.hgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:14px}
+.hcard{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:12px 16px}
+.prows{margin-top:14px;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:2px 20px}
+.prows .hcard{display:grid;grid-template-columns:240px minmax(0,1fr);gap:4px 24px;align-items:baseline;background:transparent;border:0;border-top:1px solid var(--rule);border-radius:0;padding:12px 0}
+.prows .hcard:first-child{border-top:0}
+.prows .hcard h4{margin:0}
+.prows .hcard p{margin:0;max-width:100ch}
+@media(max-width:700px){.prows .hcard{grid-template-columns:1fr}}
+.hcard.sbar{border-left:4px solid var(--c)}
+.hcard h4{font-family:var(--mono);font-size:13.5px;margin:0 0 4px}
+.hcard p{font-size:14px;color:var(--ink-2);margin:4px 0 0}
+.tblwrap2{overflow-x:auto;margin-top:10px;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:2px 12px}
+table.inv{table-layout:fixed;width:100%;min-width:980px}
+table.inv td.dk{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);line-height:1.45;overflow-wrap:anywhere}
+table.inv td:first-child{overflow-wrap:anywhere}
+table.inv td.wtc{white-space:nowrap}
+.shp{display:inline-block;border-left:4px solid var(--c);padding-left:8px}
+a.wtl{text-decoration:none;font-weight:600;font-size:13px;line-height:1.3;padding:2px 10px}
+a.wtl:hover{background:var(--ok);color:var(--surface);border-color:var(--ok)}
+.brand{color:var(--ink);text-decoration:none}
+.brand:hover{color:var(--accent-ink)}
+[hidden]{display:none!important}
+.exlabel{font-size:13.5px;color:var(--muted);margin-bottom:8px}
+.exlabel b{color:var(--ink-2);font-weight:600}
+.pcard.nested{border:0;border-top:1px solid var(--rule);border-radius:0;padding:14px 0 0;margin-top:14px;background:transparent}
+.pcard ul{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--ink-2);max-width:92ch}
+.pcard ol{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--ink-2);max-width:92ch}
+.pcard ol>li{margin:10px 0}
+.pcard .sub{margin-top:6px;font-size:13.5px}
+.assume{margin-top:8px;background:var(--sunk);border:1px solid var(--rule);border-radius:8px;padding:8px 14px;font-size:13.5px}
+.assume ul{margin:4px 0 0}
+.steps{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:10px;counter-reset:s}
+.step{border:1px solid var(--rule);border-radius:8px;padding:10px 12px;background:var(--sunk);counter-increment:s}
+.step b{display:block;font-family:var(--mono);font-size:12.5px;margin-bottom:3px}
+.step b::before{content:counter(s) " · ";color:var(--faint)}
+.step span{font-size:13px;color:var(--ink-2)}
+.sug{font-size:11px;font-family:var(--mono);color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:0 6px;margin-left:4px;white-space:nowrap}
+table.dsrc{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+table.dsrc th,table.dsrc td{padding:6px 8px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+table.dsrc th{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+table.dsrc td:first-child{font-family:var(--mono);font-size:12px;white-space:nowrap}
+.scbtns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.sclabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);align-self:center;margin-right:4px}
+.mnote{margin:6px 0 0;font-size:13.5px;color:var(--ink-2);max-width:92ch}
+.pnote{margin-top:12px;font-size:13px;color:var(--muted)}
+.sccols{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:8px}
+.sccol{border:1px solid var(--rule);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.sccol.today{border-top:4px solid var(--bad)}
+.sccol.prop2{border-top:4px solid var(--ok)}
+.sccol.bef{border-top:4px solid var(--l-derived)}
+.sccol h5{margin:0 0 6px;font-family:var(--mono);font-size:12px}
+.rs{font-family:var(--mono);font-size:12px;border:1px solid var(--rule-2);border-radius:6px;padding:4px 8px;margin:5px 0;background:var(--sunk)}
+.rs.stale{border-color:var(--l-conf);background:color-mix(in srgb,var(--l-conf) 18%,var(--surface))}
+.rs.new{border-color:var(--ok);background:var(--ok-wash)}
+.rs.gone{opacity:.5;text-decoration:line-through;border-style:dashed}
+.rs small{font-family:var(--sans);color:var(--muted);text-decoration:none;display:inline-block;margin-left:6px}
+.sccol .nt{font-size:12.5px;color:var(--ink-2);margin-top:6px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+
+/* controls */
+.ctl{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.ctl[hidden],.cg[hidden]{display:none}
+.crow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.clabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);min-width:150px}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.preset{font-family:var(--mono);font-size:12px;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-radius:6px;padding:5px 10px;cursor:pointer}
+.preset:hover{background:var(--surface-2)}
+.csep{border-top:1px solid var(--rule)}
+.vizcard{margin-top:10px;border:1px solid var(--rule-2);border-radius:12px;background:var(--surface);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.cpanel{background:var(--surface);border-bottom:1px solid var(--rule-2)}
+.vizcard .dwrap{margin-top:0;border:0;border-radius:0}
+.cphead{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface-2)}
+.cptitle{font-family:var(--mono);font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;margin-right:auto}
+.cpbtn{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-radius:8px;padding:5px 12px;cursor:pointer}
+.cpbtn:hover{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink)}
+.cpbtn[aria-expanded="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink)}
+.cpicon{display:inline-flex}
+.cpanel .ctl{margin:0;padding:14px 16px;border-top:1px solid var(--rule-2)}
+.ctitle.tgl{cursor:pointer;user-select:none;display:inline-block}
+.ctitle.tgl:hover{color:var(--ink)}
+.ctitle .chev{font-size:11px;color:var(--faint);display:inline-block}
+.ctitle.tgl[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.ctitle{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-top:18px}
+.cgroups{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.cg-t{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin-bottom:5px}
+.cg-t span{text-transform:none;letter-spacing:0;color:var(--faint);margin-left:4px}
+.stp .n small{display:block;font-size:10px;color:var(--faint);line-height:1.2}
+.stp.gc{border-style:dashed;background:var(--surface);margin-left:0}
+.cgroups .steppers{flex:none}
+.steppers{display:flex;flex-wrap:wrap;gap:8px}
+.crow .steppers{flex:1;min-width:0}
+.crow{align-items:flex-start}
+.crow .presets{align-items:center}
+.stp{display:flex;align-items:center;gap:6px;font-size:12px;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:3px 8px}
+.stp .n{font-family:var(--mono)}
+.stp button{width:22px;height:22px;border:1px solid var(--rule-2);background:var(--surface);color:var(--ink);border-radius:5px;cursor:pointer;font-family:var(--mono)}
+.stp button:hover{background:var(--accent-wash)}
+.stp output{min-width:16px;text-align:center;font-family:var(--mono);font-weight:600}
+details.more{margin-top:10px}
+details.more summary{cursor:pointer;font-family:var(--mono);font-size:12.5px;color:var(--ink-2)}
+details.more .steppers{margin-top:8px}
+footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#/" title="Back to the overview">Projection Table Inventory &amp; Grain Analysis</a>
+  <span id="navents" style="display:contents"></span>
+  <span class="sp"></span>
+  <button class="btn" id="theme" type="button">Theme</button>
+</div></header>
+
+<section id="home" style="border-top:0"><div class="wrap">
+  <div class="mast">
+    <p class="eyebrow">MiGDL · Delta ETL correctness · G5</p>
+    <h1>Projection Table Inventory &amp; Grain Analysis</h1>
+    <p class="lede">Projection layer tables are loaded append-only, so they miss upstream updates and deletes. This page analyzes
+      how each derived and platinum table is built today and proposes how to keep it correct as silver and gold main change.</p>
+  </div>
+
+  <div class="hsec">
+    <h2>Current State</h2>
+
+
+    <h3 class="hsub">Properties of the existing SQL</h3>
+    <div class="prows">
+      <div class="hcard"><h4>1. Append-only loads</h4><p>Derived tables load with <code>INSERT &hellip; LEFT JOIN target ON &lt;natural key&gt; WHERE target.&lt;key&gt; IS NULL</code>. The one exception is <code>dim_education_organization</code>, which is deleted and rebuilt.</p></div>
+      <div class="hcard"><h4>2. Latest-row dedup</h4><p><code>ROW_NUMBER()</code> keeps the most recently updated row per natural key, often partitioned on slightly different columns than the insert guard uses.</p></div>
+      <div class="hcard"><h4>3. Inconsistent student identity</h4><p>Student IDs are resolved with <code>OR</code> conditions in joins, in different orders across tables. This risks fan-out and mismatches.</p></div>
+      <div class="hcard"><h4>4. Volatile keys</h4><p><code>migdl_</code> key columns embed <code>ingestionbatchid</code> and <code>ingestiontimestamp</code>, so they change and should not be used for matching.</p></div>
+      <div class="hcard"><h4>5. No current-row filter on conf reads</h4><p><code>currentflag = TRUE</code> is commented out in the SQL of 13 of the 22 derived tables (for example <code>dim_staff</code>, <code>dim_student</code> and <code>fact_grade</code>), so expired SCD2 versions can feed derived tables.</p></div>
+      <div class="hcard"><h4>6. Whole district-year rescans</h4><p>Each derived statement is parameterized only by district and year. Nothing narrows it to a batch or a set of keys, so a run evaluates every row for the district and year, and cost follows population, not changes.</p></div>
+      <div class="hcard"><h4>7. Per-statement commits</h4><p>The runner commits after each statement and rolls back only the one that fails, so an error partway through a table leaves the earlier statements committed and the table partly written.</p></div>
+      <div class="hcard"><h4>8. Derived tables depend on each other</h4><p>15 of the 22 read another derived table, such as <code>dim_education_organization</code>, <code>dim_student</code> and <code>fact_student_enrollment</code>. Run order matters (G5 notes that <code>dim_grade_type</code> loads after <code>fact_grade</code>, which depends on it), and <code>dim_student</code> and <code>fact_student_program</code> read each other.</p></div>
+      <div class="hcard"><h4>9. Child fan-out collapsed arbitrarily</h4><p>Where conf holds one row per child combination, derived keeps one row per key, as in <code>dim_staff</code>, <code>dim_parent</code>, <code>dim_student</code> and <code>fact_discipline_action</code>. The pick is the latest <code>updatetimestamp</code>, with ties arbitrary, so the values on the other rows are lost.</p></div>
+    </div>
+
+    <h3 class="hsub">What that means for delta correctness</h3>
+    <div class="tblwrap2"><table class="dsrc"><thead><tr><th>Scenario</th><th>Effect today</th></tr></thead><tbody>
+      <tr><td>First load for a key</td><td>The row is inserted.</td></tr>
+      <tr><td>An update upstream for an existing key</td><td>The row is dropped: the key already exists in the target.</td></tr>
+      <tr><td>A hard delete upstream</td><td>The derived row stays current.</td></tr><tr><td>A child-only change in silver (e.g. a new email)</td><td>Conf is updated, but the derived row keeps the old values.</td></tr><tr><td>A joined table changes (e.g. a school name)</td><td>The derived columns stay stale.</td></tr><tr><td>Expired conf versions</td><td>Derived tables without a <code>currentflag = TRUE</code> filter can read them as current.</td></tr>
+    </tbody></table></div>
+
+    <h3 class="hsub">Key Solution Requirements</h3>
+    <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:46%"><col style="width:54%"></colgroup><thead><tr><th>Finding</th><th>Requirement</th></tr></thead><tbody><tr><td><b>Mechanism:</b> No update or delete branches</td><td>We need to add branches that apply updates and deletes.</td></tr><tr><td><b>Grain:</b> Child data is lost and chosen arbitrarily</td><td>We need a deterministic way to fan in or drop child data.</td></tr><tr><td><b>Grain:</b> Inconsistent natural key usage</td><td>We need to decide on keys per table and use them consistently.</td></tr><tr><td><b>Joins:</b> Many source tables can cause a single derived row to need recomputing</td><td>We need to define what causes dirty keys for each table.</td></tr><tr><td><b>Ordering:</b> There are derived-to-derived dependencies</td><td>We need an appropriate order when loading.</td></tr><tr><td><b>Inactive data:</b> Many tables do not filter conf by <code>currentflag = TRUE</code></td><td>We need to add currentflag filters.</td></tr></tbody></table></div>
+  </div>
+
+  <div class="hsec">
+    <h2>G5 Strategies</h2>
+    <p class="hnote"><b>Note: Assumes G1&ndash;G4 are implemented:</b> silver applies every upstream change, including deletes, and gold main (the conf tables) applies each one as a record-level replacement, with batch ids, a record flag and tombstones.</p>
+    <h3 class="hsub">Update and Delete Mechanisms</h3>
+    <p>For each derived table the analysis records its grain and driving key, upstream sources, build shape, how child data
+      is handled, and a candidate strategy. The strategies under consideration:</p>
+    <div class="hgrid">
+      <div class="hcard sbar" style="--c:var(--warn)"><h4>1. Recompute</h4><p>Delete and rebuild the slice. Simple and always correct, but it rewrites everything.</p></div>
+      <div class="hcard sbar" style="--c:var(--accent)"><h4>2. Dirty-key upsert: MERGE</h4><p>Update or insert only the changed keys. Fits tables that map 1:1 to their conf grain.</p></div>
+      <div class="hcard sbar" style="--c:var(--ok)"><h4>3. Dirty-key upsert: key-slice-replace</h4><p>Delete and re-insert every row for a changed key. Fits tables where the row count per key can change (1:N or N:N).</p></div>
+      <div class="hcard sbar" style="--c:var(--ink-2)"><h4>4. Retire</h4><p>Remove the table completely, or move its logic into existing ETL.</p></div>
+    </div>
+    <p>Two cross-cutting points: most derived tables draw from several source tables, so dirty keys have to be detected across more than one source; and choosing recompute for a table makes it harder to propagate deletes beyond that table.</p>
+  </div>
+
+  <div class="hsec">
+    <h2>Gold Derived Inventory at a Glance</h2>
+    <p>All 22 gold derived tables are listed below, along with their current build shape and proposed G5 candidate strategy. Every table has a page, linked on the right. <b>Walkthrough</b> pages include a visualization of grain through the layers, the known consumers of the table, and the proposed delta correctness solution. <b>Notes</b> pages hold the G5 inventory analysis for tables that do not have a walkthrough yet.</p>
+    <div class="tblwrap2"><table class="dsrc inv" id="inv"></table></div>
+  </div>
+
+  <div class="hsec">
+    <h2>Platinum Inventory at a Glance</h2>
+    <p>All 18 platinum layer tables. These have not been analyzed yet.</p>
+    <div class="tblwrap2"><table class="dsrc inv" id="invp"></table></div>
+  </div>
+</div></section>
+<div id="entities"></div>
+
+<footer><div class="wrap">
+  <p>Source: <code>MiGreatDataLake/amorphic-cicd</code> <code>etl/edfi_gold_platinum/</code>, derived SQL at commit <code>e9dd9d1</code>; staging join is <code>core/data_preparation.py::build_silver_view</code>. Counts are simulated from the join shapes, not queried.</p>
+</div></footer>
+
+<script>
+"use strict";
+var GH="https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/";
+var ENTITIES=[];
+
+ENTITIES.push({
+  id:"dim_staff",
+  layer:"Gold derived",
+  g5:{
+  "grain": "1 row per (`district_staff_id`, `schooldistrictid`, `schoolyear`, `schoolid`)",
+  "up": "dim_staff_conf fanned through fact_staff_edorg_assignment_assoc, fact_staff_section_assoc_conf (both gold conf). Also dim_education_organization, dim_school, and maisa_school_districts",
+  "shape": "1:N key-slice - fans out relative to dim_staff_conf when one staff member has multiple school assignments in fact_staff_edorg_assignment_assoc",
+  "strat": "Dirty Key Upsert  (key-slice-replace)",
+  "why": "`dim_staff_conf` has N rows per staff member, and derived has M rows, where M is the number of school assignments. Plus, the number of rows for one staff member can change between runs. A MERGE cannot reconcile a changing row count, so we need to delete and re-insert the whole slice",
+  "notes": [
+    "Child data handling: Child columns that appear: race_ethnicity, race_ethnicity_detail, primary_email, primary_phone. One row is chosen arbitrarily from main. API uses all four. Platinum uses email and phone.",
+    "Comment in SQL confirms that fan-out is intentional (“enables multi-school staff support”).",
+    "Use key-slice-replace mechanism because grain is fanned-out: 1 dirty staff key can change row count between runs, which MERGE can’t reconcile."
+  ]
+},
+  solution:"Dirty-key upsert: key-slice-replace",
+  title:"dim_staff",
+  blurb:"Fans out in gold staging (product of child rows), 1:1 to gold main, then collapses to one arbitrary row per school in gold derived.",
+  headline:["staff + children","1 row per child combination","same grain, SCD2","1 row per (staff, school)"],
+  main:["race","electronic_mail","telephone","identification_code","address"],
+  children:[
+    {k:"address",t:"staff_address",def:1,gc:{t:"staff_address_period",def:1},s:"addr"},
+    {k:"race",t:"staff_race",def:1,s:"race"},
+    {k:"rep_race_order",t:"staff_rep_race_order",def:0,s:"raceord"},
+    {k:"electronic_mail",t:"staff_electronic_mail",def:1,s:"email"},
+    {k:"telephone",t:"staff_telephone",def:1,s:"tel"},
+    {k:"language",t:"staff_language",def:0,gc:{t:"staff_language_use",def:1},s:"lang"},
+    {k:"credential",t:"staff_credential",def:0,s:"cred"},
+    {k:"identification_code",t:"staff_identification_code",def:2,s:"id"},
+    {k:"recognition",t:"staff_recognition",def:0,s:"recog"},
+    {k:"other_name",t:"staff_other_name",def:0,s:"othn"},
+    {k:"personal_id_document",t:"staff_personal_identification_document",def:0,s:"pdoc"},
+    {k:"identification_document",t:"staff_identification_document",def:0,s:"idoc"},
+    {k:"visa",t:"staff_visa",def:0,s:"visa"},
+    {k:"ancestry_ethnic_origin",t:"staff_ancestry_ethnic_origin",def:0,s:"anc"},
+    {k:"international_address",t:"staff_international_address",def:0,s:"intl"},
+    {k:"tribal_affiliation",t:"staff_tribal_affiliation",def:0,s:"trib"}
+  ],
+  parent:"staff",
+  stagingTable:"goldstage.staging_dim_staff_conf",
+  derivedTable:"gold.dim_staff",
+  parentLabel:"STAFF-1",
+  schoolsKey:"edorg",
+  assoc:[
+    {k:"edorg",label:"school assignments",def:1},
+    {k:"sec",label:"section schools",def:1}
+  ],
+  presets:[
+    {n:"Typical",c:{address:1,race:1,electronic_mail:1,telephone:1,identification_code:2},a:{edorg:1,sec:1}},
+    {n:"Multi-school",c:{race:2,electronic_mail:2,telephone:1,identification_code:2},a:{edorg:3,sec:1}},
+    {n:"Heavy child data",c:{address:2,"address.gc":2,race:2,electronic_mail:2,telephone:2,language:2,"language.gc":2,identification_code:3,credential:2},a:{edorg:2,sec:1}},
+    {n:"One row everywhere",c:{race:1,electronic_mail:1,telephone:1,identification_code:1},a:{edorg:1,sec:1}}
+  ],
+  links:[
+    ["Staging join (Spark)","core/data_preparation.py"],
+    ["dim_staff_conf: expire","sql/gold_main/dim_staff_conf.sql"],
+    ["dim_staff_conf: insert","sql/gold_main/dim_staff_conf_2.sql"],
+    ["dim_staff (derived)","sql/gold_derived/dim_staff.sql"]
+  ],
+  findings:[
+    {sev:"info",layer:"Silver → Gold main",t:"Most gold main child columns (creating fanout from silver) are not used by gold derived",d:"Staging joins 18 silver child and grandchild tables to each staff member, and their rows multiply across tables. Only 4 of them feed a column that dim_staff uses (email, phone, identification code and race order). 12 feed conf columns that derived never reads, and 2 (staff_races and staff_addresses_periods) feed no conf column at all. dim_staff.sql is the only reader of dim_staff_conf in this repo. Whether gold main should keep the full fan-out, join only the needed children, or aggregate them is open for further analysis."},
+    {sev:"warn",layer:"Gold main → Gold derived",t:"Derived reads expired conf rows",d:"currentflag = TRUE is commented out in dim_staff.sql, so expired versions are eligible. The winner is the latest updatetimestamp; rows loaded together tie, so the pick is arbitrary."},
+    {sev:"warn",layer:"Gold main → Gold derived (join to dim_education_organization)",t:"Edorg join could incorrectly match multiple rows",d:"The OR in this join is redundant for schools. It matters only if an ID collides across org types, and then at most a wrong education_org_key reaches gold.dim_staff.",points:["<b>The join is redundant for schools.</b> <code>dim_staff</code> takes one column from it, <code>education_org_key</code>:<pre>LEFT JOIN gold.dim_education_organization edo\n  ON (sa.educationorganizationid = edo.education_org_id\n      OR sa.educationorganizationid = edo.school_id)\n AND sa.schooldistrictid = edo.schooldistrictid\n AND sa.schoolyear = edo.schoolyear\n AND edo.currentflag = TRUE</pre>Only School rows have a <code>school_id</code>, and there it equals <code>education_org_id</code>, so for a school ID both sides of the <code>OR</code> match the same row.", "<b>It matters only on an ID collision.</b> If an SEA, ESC or LEA row in the same district and year has the same numeric ID as a school, the first condition matches it as well as the School row. Ed-Fi IDs should be unique across org types, so I expect this to be rare. I have not checked the data.", "<b>Any extra matches are removed by the dedup.</b> The duplicate rows have the same staff, district and school, which is the <code>PARTITION BY</code> of the <code>ROW_NUMBER()</code>, and <code>WHERE rn = 1</code> keeps one row per school. <code>dim_staff</code> still gets one row per (staff, school), so row counts are not affected.", "<b>The wrong <code>education_org_key</code> could still be visible in <code>gold.dim_staff</code>.</b> Which duplicate is kept is arbitrary, because only the conf row's timestamp is in the <code>ORDER BY</code> and it is the same for all of them. The kept row could be the non-School organization, and its key is an MD5 of the ID and the org type, so the value could be wrong, and could change between runs. No known consumer reads <code>education_org_key</code> (see Known Consumers), so nothing downstream sees it today.", "<b>Suggested fix:</b> join on <code>edo.education_org_id = sa.educationorganizationid AND edo.education_org_type = 'School'</code>. This removes the collision risk and states the intent."]},
+    {sev:"bad",layer:"Staging → Gold main",t:"Conf churn for multi-row staff",solved:{by:"G3/G4"},d:"The expire step flags a current row when its hash differs from SOME staging row for the same staffuniqueid. With 2+ distinct staging rows, every row differs from another, so all are expired and re-inserted whenever the staff is in a batch."}
+  ],
+  /* other tables joined in the derived build; each group renders under the gold main title */
+  joinGroups:function(r,S){
+    var A=S.a.edorg,X=S.a.sec,g=[],i;
+    var real=r.schools.map(function(s,j){return {s:s,j:j};}).filter(function(x){return x.s.id!=="NULL";});
+    var rows=[],CAP=5;
+    for(i=0;i<Math.min(A,CAP);i++)rows.push({label:"assign#"+(i+1),sub:"edorg SCH-"+(101+i),to:[i]});
+    if(A>CAP){var rest=[];for(i=CAP;i<A;i++)rest.push(i);rows.push({label:"+"+(A-CAP)+" more",sub:"",to:rest});}
+    g.push({table:"fact_staff_edorg_assignment_assoc",tag:"gold main · cause of the fan-out into gold derived: the staff member's schools, one derived row per school (school-level only, LEA rows dropped)",rows:rows});
+    var sr=[];
+    for(i=0;i<Math.min(X,4);i++)sr.push({label:"sec#"+(i+1),sub:i===0?(A===0?"rn=1 → used as fallback":"rn=1 · not used (edorg present)"):"not used (rn>1)",to:(i===0&&A===0)?[0]:[],cls:(i===0&&A===0)?"":"unused"});
+    if(sr.length)g.push({table:"fact_staff_section_assoc_conf",tag:"gold main · fallback school, used only when there is no school-level assignment",rows:sr});
+    var dr=real.slice(0,CAP).map(function(x){return {label:x.s.id,sub:"1 row · MAX(eem_agreement_nmbr)",to:[x.j]};});
+    if(real.length>CAP)dr.push({label:"+"+(real.length-CAP)+" more",sub:"",to:real.slice(CAP).map(function(x){return x.j;})});
+    if(dr.length)g.push({table:"dim_school",tag:"gold main · school details (agreement number) for each school; one row per school",rows:dr});
+    g.push({table:"maisa_school_districts",tag:"gold reference · district details (district id); one row per district",kind:"ref",rows:[{label:"district row",sub:"entity_code → district_id",to:r.schools.map(function(s,j){return j;})}]});
+    var er=real.slice(0,CAP).map(function(x){return {label:x.s.id,sub:"OR-join: can match 2 rows",to:[x.j]};});
+    if(er.length)g.push({table:"dim_education_organization",tag:"gold derived, built earlier in the run · adds the education org key",kind:"derived",rows:er});
+    return g;
+  },
+  consumers:{
+  "types": [
+    [
+      "conf",
+      "dim_staff_conf"
+    ],
+    [
+      "assoc",
+      "Assignments and dim_school"
+    ],
+    [
+      "ref",
+      "maisa_school_districts"
+    ],
+    [
+      "edo",
+      "dim_education_organization (derived)"
+    ],
+    [
+      "gen",
+      "Generated by the load"
+    ],
+    [
+      "none",
+      "Not populated by any ETL SQL"
+    ]
+  ],
+  "fan": [
+    "race_ethnicity",
+    "race_ethnicity_detail",
+    "primary_email",
+    "primary_phone"
+  ],
+  "cols": [
+    [
+      "staff_key",
+      "gen",
+      "MD5(staff_unique_id | schoolid)"
+    ],
+    [
+      "staff_unique_id",
+      "conf",
+      "State identificationcode, else migdl- + district + staffuniqueid"
+    ],
+    [
+      "state_staff_id",
+      "conf",
+      "identificationcode (State)"
+    ],
+    [
+      "district_id",
+      "ref",
+      "entity_code"
+    ],
+    [
+      "education_org_key",
+      "edo",
+      "education_org_key"
+    ],
+    [
+      "school_year",
+      "conf",
+      "schoolyear"
+    ],
+    [
+      "first_name",
+      "conf",
+      "firstname"
+    ],
+    [
+      "middle_name",
+      "conf",
+      "middlename"
+    ],
+    [
+      "last_name",
+      "conf",
+      "lastsurname"
+    ],
+    [
+      "full_name",
+      "gen",
+      "first + middle + last name"
+    ],
+    [
+      "generation_suffix",
+      "conf",
+      "generationcodesuffix"
+    ],
+    [
+      "birth_date",
+      "conf",
+      "birthdate"
+    ],
+    [
+      "gender",
+      "conf",
+      "sexdescriptor"
+    ],
+    [
+      "is_hispanic_latino",
+      "conf",
+      "hispaniclatinoethnicity"
+    ],
+    [
+      "race_ethnicity",
+      "conf",
+      "racedescriptor"
+    ],
+    [
+      "race_ethnicity_detail",
+      "conf",
+      "raceorderchoicedescriptor"
+    ],
+    [
+      "highest_education_level",
+      "conf",
+      "highestcompletedlevelofeducationdescriptor"
+    ],
+    [
+      "years_of_experience",
+      "conf",
+      "yearsofpriorprofessionalexperience"
+    ],
+    [
+      "years_of_teaching_experience",
+      "conf",
+      "yearsofpriorteachingexperience"
+    ],
+    [
+      "is_highly_qualified",
+      "conf",
+      "highlyqualifiedteacher"
+    ],
+    [
+      "primary_email",
+      "conf",
+      "electronicmailaddress"
+    ],
+    [
+      "primary_phone",
+      "conf",
+      "telephonenumber"
+    ],
+    [
+      "primary_district_id",
+      "none",
+      "not set by the ETL SQL"
+    ],
+    [
+      "primary_district_name",
+      "none",
+      "not set by the ETL SQL"
+    ],
+    [
+      "effectivefrom",
+      "gen",
+      "GETDATE()"
+    ],
+    [
+      "effectiveto",
+      "gen",
+      "NULL"
+    ],
+    [
+      "currentflag",
+      "gen",
+      "TRUE"
+    ],
+    [
+      "schooldistrictid",
+      "conf",
+      "schooldistrictid"
+    ],
+    [
+      "schoolyear",
+      "conf",
+      "schoolyear"
+    ],
+    [
+      "ingestionbatchid",
+      "conf",
+      "ingestionbatchid"
+    ],
+    [
+      "ingestiontimestamp",
+      "gen",
+      "GETDATE()"
+    ],
+    [
+      "updatetimestamp",
+      "gen",
+      "GETDATE()"
+    ],
+    [
+      "migdl_staff_key",
+      "gen",
+      "hash of staff id, district, year, batch, timestamp"
+    ],
+    [
+      "schoolid",
+      "assoc",
+      "dim_school.schoolid, via the edorg assignment (else the section school)"
+    ],
+    [
+      "district_school_id",
+      "assoc",
+      "dim_school.eem_agreement_nmbr"
+    ],
+    [
+      "district_staff_id",
+      "conf",
+      "staffuniqueid"
+    ],
+    [
+      "eem_agreement_number",
+      "assoc",
+      "dim_school.eem_agreement_nmbr"
+    ]
+  ],
+  "users": [
+    {
+      "id": "api_staff",
+      "kind": "api",
+      "label": "API: staff directory",
+      "file": "lambda/app_district_handler/staff.py",
+      "reads": [
+        "birth_date",
+        "currentflag",
+        "district_id",
+        "district_staff_id",
+        "eem_agreement_number",
+        "effectivefrom",
+        "effectiveto",
+        "first_name",
+        "full_name",
+        "gender",
+        "generation_suffix",
+        "highest_education_level",
+        "ingestiontimestamp",
+        "is_highly_qualified",
+        "is_hispanic_latino",
+        "last_name",
+        "middle_name",
+        "primary_district_id",
+        "primary_district_name",
+        "primary_email",
+        "primary_phone",
+        "race_ethnicity",
+        "race_ethnicity_detail",
+        "schooldistrictid",
+        "schoolyear",
+        "staff_unique_id",
+        "updatetimestamp",
+        "years_of_experience",
+        "years_of_teaching_experience"
+      ]
+    },
+    {
+      "id": "api_enroll",
+      "kind": "api",
+      "label": "API: student enrollment history",
+      "file": "lambda/app_student_handler/student_enrollment_history.py",
+      "reads": [
+        "staff_unique_id",
+        "schooldistrictid",
+        "schoolyear",
+        "state_staff_id",
+        "full_name",
+        "currentflag"
+      ]
+    },
+    {
+      "id": "fact_staff_section",
+      "kind": "derived",
+      "label": "gold.fact_staff_section",
+      "file": "sql/gold_derived/fact_staff_section.sql",
+      "reads": [
+        "currentflag",
+        "district_staff_id",
+        "schooldistrictid",
+        "schoolyear",
+        "staff_key",
+        "staff_unique_id",
+        "state_staff_id"
+      ]
+    },
+    {
+      "id": "fact_teacher_roster",
+      "kind": "platinum",
+      "label": "platinum.fact_teacher_roster",
+      "file": "sql/platinum/fact_teacher_roster.sql",
+      "note": "read by the API roster endpoint",
+      "reads": [
+        "currentflag",
+        "full_name",
+        "schooldistrictid",
+        "schoolyear",
+        "staff_unique_id",
+        "state_staff_id"
+      ]
+    },
+    {
+      "id": "fact_miread_ctx",
+      "kind": "platinum",
+      "label": "platinum.fact_miread_student_context",
+      "file": "sql/platinum/fact_miread_student_context.sql",
+      "reads": [
+        "currentflag",
+        "district_staff_id",
+        "schooldistrictid",
+        "schoolyear",
+        "staff_unique_id",
+        "state_staff_id"
+      ]
+    },
+    {
+      "id": "pt_ctx_sd1",
+      "kind": "temp",
+      "label": "platinum: pt_ctx_sd1 (temp)",
+      "file": "sql/platinum/pt_ctx_sd1.sql",
+      "reads": [
+        "currentflag",
+        "district_staff_id",
+        "first_name",
+        "full_name",
+        "last_name",
+        "primary_email",
+        "primary_phone",
+        "schooldistrictid",
+        "schoolyear",
+        "staff_key",
+        "staff_unique_id"
+      ]
+    },
+    {
+      "id": "tmp_enroll_json",
+      "kind": "temp",
+      "label": "platinum: tmp_enrollments_json (temp)",
+      "file": "sql/platinum/tmp_enrollments_json.sql",
+      "reads": [
+        "full_name",
+        "schooldistrictid",
+        "schoolyear",
+        "staff_unique_id"
+      ]
+    },
+    {
+      "id": "stg_enroll_hist",
+      "kind": "temp",
+      "label": "temp: stg_curated_enrollment_history",
+      "file": "sql/temp_tables/stg_curated_enrollment_history.sql",
+      "reads": [
+        "staff_unique_id",
+        "schooldistrictid",
+        "schoolyear",
+        "state_staff_id",
+        "full_name",
+        "first_name",
+        "last_name",
+        "primary_email",
+        "primary_phone",
+        "currentflag"
+      ]
+    }
+  ],
+    "scope": "Checked: the consumption API lambdas, and the derived, platinum and temp-table SQL in amorphic-cicd. No references to dim_staff were found in the DynamoDB design documents."
+},
+  proposal:{
+    status:"Proposed in the G5 inventory · under discussion",
+    strategy:"Dirty-key upsert, key-slice-replace",
+    summary:"When a staff member is dirty, delete every gold.dim_staff row for that staff key and re-insert the recomputed slice. The G5 inventory chose this over a MERGE because one staff key can have a different number of derived rows from one run to the next, which a MERGE cannot reconcile.",
+    whyNotMerge:"A MERGE on (district_staff_id, district, year, schoolid) can update or insert a row, but it has no way to remove the row for a school the staff member no longer has. The derived grain is (staff, school), and the school count per staff changes whenever an assignment is added, ended or moved, so the whole slice for the staff key has to be replaced.",
+    mechNote:"Steps 2–4 run together per district and year in one transaction, as G3/G4 does for gold main (GD6), so a failure cannot leave a staff member with no rows.",
+    steps:[
+      {h:"Collect dirty keys",d:"district_staff_id + schooldistrictid + schoolyear, from every source that can change a dim_staff row (table below), limited to the batch window."},
+      {h:"Delete the slice",d:"DELETE the dirty keys' rows from gold.dim_staff. This removes schools the staff no longer has, and everything for a deleted staff member."},
+      {h:"Recompute from current conf",d:"Run the existing dim_staff SELECT for the dirty keys only, reading conf with currentflag = TRUE (the G3/G4 reader filter). Which child values survive for each school is an open question (below)."},
+      {h:"Insert the slice",d:"Insert the recomputed rows. A key with no rows left, such as a tombstoned staff member, simply has no derived rows."}
+    ],
+    sources:[
+      ["dim_staff_conf","staffuniqueid","New, changed or tombstoned conf rows in the batch window (G3/G4 provides the batch id and recordflag)."],
+      ["fact_staff_edorg_assignment_assoc","staffreference_staffuniqueid","An assignment added, ended or moved changes which schools the staff has. Today there are no dirty keys: the build rescans every staff member for the district and year each run, so a new school row is inserted but the old school row is never removed."],
+      ["fact_staff_section_assoc_conf","staffreference_staffuniqueid","Only matters for staff with no school-level assignment (fallback school)."],
+      ["dim_school","schoolid, mapped to staff through assignments","Changes eem_agreement_number: an enrichment update, not a row-count change."],
+      ["dim_education_organization (derived)","school id, mapped to staff","Changes education_org_key. This is a derived-to-derived dependency, so it must be built first."],
+      ["maisa_school_districts","district","Only supplies district_id; rarely changes."]
+    ],
+    scenarios:[
+      {n:"Email changes in silver",
+        before:[{l:"SCH-101 · a@x.org"},{l:"SCH-102 · a@x.org"}],
+        today:[{l:"SCH-101 · a@x.org",s:"stale",t:"stale"},{l:"SCH-102 · a@x.org",s:"stale",t:"stale"}],
+        todayNote:"Gold conf is up to date after G3/G4, but the guard finds both (staff, school) rows and skips them, so the new email never reaches derived.",
+        prop:[{l:"SCH-101 · b@x.org",s:"new",t:"replaced"},{l:"SCH-102 · b@x.org",s:"new",t:"replaced"}],
+        propNote:"The staff key is dirty through dim_staff_conf. The slice is deleted and rebuilt from current conf."},
+      {n:"Staff deleted in silver",
+        before:[{l:"SCH-101 · a@x.org"},{l:"SCH-102 · a@x.org"}],
+        today:[{l:"SCH-101 · a@x.org",s:"stale",t:"stale"},{l:"SCH-102 · a@x.org",s:"stale",t:"stale"}],
+        todayNote:"G3/G4 closes the conf rows and writes a tombstone, but the append-only derived build never removes rows, so both stay.",
+        prop:[{l:"SCH-101 · a@x.org",s:"gone",t:"removed"},{l:"SCH-102 · a@x.org",s:"gone",t:"removed"}],
+        propNote:"Gold main receives the delete as a tombstone (recordflag = 'D'). The tombstone marks the key dirty, and nothing is re-inserted."},
+      {n:"Staff assigned to SCH-103 from SCH-102",
+        before:[{l:"SCH-101 · a@x.org"},{l:"SCH-102 · a@x.org"}],
+        today:[{l:"SCH-101 · a@x.org"},{l:"SCH-102 · a@x.org",s:"stale",t:"stale"},{l:"SCH-103 · a@x.org",s:"new",t:"new, on the next derived run"}],
+        todayNote:"The derived build rescans every staff member each run, so the new school row is inserted. Nothing removes the old one, so the staff appears at both schools.",
+        prop:[{l:"SCH-101 · a@x.org"},{l:"SCH-102 · a@x.org",s:"gone",t:"removed"},{l:"SCH-103 · a@x.org",s:"new",t:"new"}],
+        propNote:"Dirty through the assignment table, not dim_staff_conf. This is why the assignment table must be a dirty-key source."}
+    ],
+    current:{
+      title:"Current State: append-only derived build",
+      summary:"Gold derived tables load with INSERT … LEFT JOIN target ON <natural key> WHERE target.<key> IS NULL. A row is inserted the first time its key appears and is never touched again (G5 inventory).",
+      points:[
+        "An update upstream is ignored: the key already exists in the target, so the join drops the row.",
+        "A delete upstream is never applied: the derived row stays current.",
+        "For dim_staff the key is (district_staff_id, district, year, schoolid), so a school change adds a new row and leaves the old one in place."
+      ]
+    },
+    depends:[
+      "G1/G2: silver applies every change, including parent tombstones and child-driven re-versioning of the parent (D5).",
+      "G3/G4: gold conf applies every change as a record-level replacement, with a batch id and recordflag on each row and one tombstone per deleted record (GD1–GD7).",
+      "G3/G4 §4: derived readers of gold conf filter on currentflag = TRUE."
+    ],
+    questions:[
+      {
+            "q": "How should derived deal with the child fan-out data that is lost?",
+            "d": "Derived keeps one conf row per school, so the race, race detail, email and phone values on the other conf rows never reach it. Conf already carries primaryemailaddressindicator and orderofpriority, which dim_staff.sql does not use.",
+            "options": [
+                  "Pick deterministically, using the primary or priority indicators.",
+                  "Keep all values for a school in one column, such as an array or a delimited list.",
+                  "Move the child data into separate derived tables.",
+                  "Accept the loss and document which value is kept."
+            ]
+      },
+      {
+            "q": "Which source tables should contribute dirty keys?",
+            "d": "dim_staff_conf and the edorg assignments look necessary. It is open whether the enrichment sources (dim_school, dim_education_organization, maisa_school_districts) should too, especially dim_education_organization, which is rebuilt every run and has no change signal."
+      },
+      {
+            "q": "How should ended assignments be treated?",
+            "d": "dim_staff.sql filters assignments on currentflag but not enddate. If a staff move is recorded by end-dating the old assignment, the old school's row would be kept. How each source system signals a move is not yet verified."
+      },
+      {
+            "q": "Is key-slice-replace the right strategy?",
+            "d": "Recompute and diff (not in the G5 inventory) needs no change signal but reads the full slice each run. Deciding needs the staff row counts and the run time of the current step."
+      },
+      {
+            "q": "How do we clean up the stale rows already in gold.dim_staff?",
+            "d": "The append-only build has left rows for schools staff no longer have. Probably a one-time rebuild of each district-year."
+      },
+      {
+            "q": "Can derived consume gold conf by batch window?",
+            "d": "G3/G4 lists this as an open question for G5 (Q7), and the dirty-key approach depends on it."
+      },
+      {
+            "q": "How should changes propagate to the tables that depend on dim_staff?",
+            "d": "Platinum and fact_staff_section read dim_staff, and staff_key can change when an ID code changes."
+      },
+      {
+            "q": "Are there consumers of dim_staff beyond the known ones?",
+            "d": "The Known Consumers section covers the consumption API lambdas and the derived, platinum and temp-table SQL in these repos. External readers and anything outside these repos are not covered."
+      }
+]
+  },
+  /* explains the collapse between gold main and gold derived; rendered under the diagram */
+  explainCollapse:function(r){
+    var N=r.conf,A=r.derived;
+    return {
+      title:"Gold derived keeps only 1 conf row per school",
+      layer:"Gold main → Gold derived",
+      items:[
+        "<b>The derived grain is (staff, school).</b> Race, email, phone and the other child values are not part of that key, and <code>gold.dim_staff</code> has one single-valued column for each (one <code>race_ethnicity</code>, one <code>primary_email</code>, one <code>primary_phone</code>). The conf rows for a school are the same staff in the same school, differing only by child combination, so they must become one row. The SQL comment says the grain is deliberate: <i>“One row per (staff, school) — enables multi-school staff support”</i>.",
+        "<b>The join multiplies first, then the window collapses.</b> Joining <code>dim_staff_conf</code> to the school assignments gives <b>"+fmt(N)+" conf × "+A+" school"+(A===1?"":"s")+" = "+fmt(N*A)+"</b> candidate rows. Candidates for the same school share a partition key, so they land in "+A+" group"+(A===1?"":"s")+" of "+fmt(N)+".",
+        "<b>The rule</b> (<code>dim_staff.sql</code>):<pre>ROW_NUMBER() OVER (\n  PARTITION BY s.staffuniqueid, s.schooldistrictid, sa.educationorganizationid   -- staff + district + school\n  ORDER BY COALESCE(s.updatetimestamp, s.ingestiontimestamp) DESC\n) AS rn      ...  WHERE src.rn = 1</pre>",
+        "<b>Which row wins:</b> the most recently updated one. Conf rows inserted by the same statement are likely to carry the same <code>GETDATE()</code> timestamp, so ties are broken arbitrarily. Expired versions also compete, because <code>currentflag = TRUE</code> is commented out. The winner can differ between a staff member's schools.",
+        "<b>What is lost:</b> "+(N>1?"the child values on the other "+fmt(N-1)+" conf row"+(N-1===1?"":"s")+" for each school never reach gold derived. Because the insert guard is append-only, the first pick also stays put until the key is replaced.":"nothing in this example, since there is only 1 conf row. The loss only appears once a staff member has 2+ staging rows.")
+      ]
+    };
+  },
+  /* sim: dims (one per child), staging/conf rows = product, derived rows = schools */
+  sim:function(S){
+    var dims=[],prod=1;
+    this.children.forEach(function(ch){
+      var n=S.c[ch.k]||0,g=ch.gc?(S.c[ch.k+".gc"]===undefined?ch.gc.def:S.c[ch.k+".gc"]):0;
+      var eff=n===0?1:n*Math.max(1,g);
+      dims.push({ch:ch,n:n,g:g,eff:eff});prod*=eff;
+    });
+    var A=S.a.edorg,X=S.a.sec,schools=[];
+    if(A>0){for(var i=1;i<=A;i++)schools.push({id:"SCH-"+(100+i),src:"edorg"});}
+    else if(X>0)schools.push({id:"SCH-201",src:"section fallback"});
+    else schools.push({id:"NULL",src:"no school"});
+    return {dims:dims,staging:prod,conf:prod,schools:schools,derived:schools.length};
+  }
+});
+
+/* ============================== renderer ============================== */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
+function fmt(n){return Number(n).toLocaleString();}
+var INVENTORY=[
+ [
+  "dim_date",
+  "full_date",
+  "Synthetic generation",
+  "No change"
+ ],
+ [
+  "dim_education_organization",
+  "education_org_id, education_org_type, schooldistrictid, schoolyear",
+  "Fan-in merge of 4 conf tables",
+  "Recompute (already implemented)"
+ ],
+ [
+  "dim_grade_type",
+  "grade_type, district, year",
+  "Distinct values from fact_grade_conf",
+  "Recompute, and fix sequencing"
+ ],
+ [
+  "dim_parent",
+  "parent_unique_id, schooldistrictid",
+  "1:1 with dim_parent_conf",
+  "Dirty-key upsert: TBD"
+ ],
+ [
+  "dim_school_year",
+  "school_year",
+  "Dedup across districts",
+  "Recompute"
+ ],
+ [
+  "dim_section",
+  "section_identifier, school_id, school_year, session_name, local_course_code, schooldistrictid",
+  "1:1 with enrichment",
+  "Dirty-key upsert: MERGE"
+ ],
+ [
+  "dim_staff",
+  "district_staff_id, schooldistrictid, schoolyear, schoolid",
+  "1:N key-slice from dim_staff_conf",
+  "Dirty-key upsert: key-slice-replace"
+ ],
+ [
+  "dim_student",
+  "COALESCE(student_unique_id, state_id), district, year (not well-defined)",
+  "1:1 base plus attribute fan-in",
+  "Dirty-key upsert: TBD"
+ ],
+ [
+  "fact_discipline_action",
+  "discipline_action_identifier, student_unique_id, discipline_date, schooldistrictid, school_year",
+  "1:1 with enrichment",
+  "Dirty-key upsert: TBD"
+ ],
+ [
+  "fact_discipline_incident",
+  "incident_identifier, school_id, schooldistrictid, schoolyear",
+  "1:1 passthrough",
+  "Dirty-key upsert: MERGE"
+ ],
+ [
+  "fact_discipline_incident_behavior",
+  "incident_identifier, student_unique_id, behavior_code, schooldistrictid",
+  "1:1 with enrichment",
+  "Dirty-key upsert: MERGE"
+ ],
+ [
+  "fact_grade",
+  "student_unique_id, section_key, grade_type, grading_period_key, schooldistrictid, schoolyear",
+  "1:1 with enrichment",
+  "Dirty-key upsert: MERGE"
+ ],
+ [
+  "fact_staff_section",
+  "staff_unique_id, section_key, schooldistrictid, schoolyear",
+  "1:1 with enrichment",
+  "Dirty-key upsert: MERGE"
+ ],
+ [
+  "fact_student_academic_record",
+  "studentreference_studentuniqueid, educationorganizationreference_educationorganizationid, termdescriptor, schoolyeartypereference_srcschoolyear, schoolyear, schooldistrictid",
+  "True aggregation (MAX)",
+  "Other: aggregation"
+ ],
+ [
+  "fact_student_assessment",
+  "student_unique_id, student_assessment_identifier, assessment_dim_key, administration_date, schooldistrictid, schoolyear",
+  "1:1 with enrichment; temp-table aggregation",
+  "Recompute"
+ ],
+ [
+  "fact_student_enrollment",
+  "student_unique_id, school_key, entry_date, schooldistrictid, schoolyear",
+  "1:1 with enrichment, plus UPDATE passes",
+  "Dirty-key upsert: MERGE"
+ ],
+ [
+  "fact_student_objective_assessment",
+  "student_unique_id, objective_assessment_key, administration_date, schooldistrictid, schoolyear",
+  "1:1 with enrichment",
+  "Recompute"
+ ],
+ [
+  "fact_student_parent",
+  "student_unique_id, parent_key, schooldistrictid, schoolyear",
+  "1:1 with enrichment",
+  "Dirty-key upsert: MERGE"
+ ],
+ [
+  "fact_student_program",
+  "student_unique_id, program_key, begin_date, schooldistrictid, school_year",
+  "UNION with prioritization",
+  "Retire (move logic into dim_student)"
+ ],
+ [
+  "fact_student_school_attendance",
+  "student_unique_id, school_key, event_date, attendance_category, schooldistrictid",
+  "1:1 with enrichment",
+  "Dirty-key upsert: MERGE"
+ ],
+ [
+  "fact_student_section_enrollment",
+  "student_unique_id, section_key, schooldistrictid, schoolyear",
+  "1:1 with enrichment",
+  "Dirty-key upsert: MERGE, rename conf table"
+ ],
+ [
+  "fact_student_section_grade",
+  "student_unique_id, section_key, grade_type, grading_period_key, schooldistrictid, schoolyear",
+  "1:1 with enrichment",
+  "Dirty-key upsert: MERGE, rename conf table"
+ ]
+];
+var PLATINUM=["curated_district_roster", "curated_enrollment_history", "curated_ewims_student_early_warn_incidents_actions", "curated_miread_district_assessment", "curated_student_discipline", "dim_ewims_indicator_domain", "dim_ewims_status_threshold", "dim_ewims_time_period_type", "dim_miread_assessment_period", "dim_miread_assessment_vendor", "dim_miread_literacy_component", "dim_miread_proficiency_level", "fact_ewims_student_early_warning", "fact_miread_student_assessment", "fact_miread_student_assessment_component", "fact_miread_student_context", "fact_miread_student_context_enriched", "fact_teacher_roster"];
+var NOTES=[
+ {
+  "table": "dim_date",
+  "grain": "1 row per calendar `full_date`",
+  "up": "None",
+  "shape": "Synthetic generation",
+  "strat": "No Change",
+  "notes": [
+   "Child data handling: N/A",
+   "Globally scoped (no district/year filter at all, unlike any other table).",
+   "Guard is NOT EXISTS against same table.",
+   "Generation populates dates from 01/01/2010 to 12/14/2046.",
+   "Kurt raised that Ed-Fi provides dates and we need to do more analysis to see if we should be using those rather than our generated dates here."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/dim_date.sql"
+   ]
+  ],
+  "why": "The table is generated synthetically without an upstream table, so there is no need for a delta strategy."
+ },
+ {
+  "table": "dim_education_organization",
+  "grain": "1 row per (`education_org_id`, `education_org_type`, `schooldistrictid`, `schoolyear`)",
+  "up": "dim_education_service_center (gold conf)\ndim_local_education_agency (gold conf)\ndim_school (gold conf)\ndim_state_education_agency (gold conf)",
+  "shape": "Fan-in merge of 4 conf tables (state ed agency, ESC, LEA, school) via UNION all.",
+  "strat": "Recompute (Already Implemented)",
+  "notes": [
+   "Child data handling: Child columns that appear: street_address, city, state_code, postal_code, country_*, latitude, longitude, main_phone. An arbitrary row is selected from main, except for the SEA branch which leaks fan-out. API uses all of these attributes.",
+   "This is the only table with explicit DELETE before re-INSERT.",
+   "`education_org_key` surrogate key is an MD5 of org_id and org_type (no district or year). This makes this column not unique and it shouldn’t be used as a row-targeting key for updates or deletes. For the same reason, any downstream table should not join via education_org_key expecting it to resolve to one row."
+  ],
+  "links": [
+   [
+    "Link_1",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/dim_education_organization.sql"
+   ],
+   [
+    "Link_2",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/dim_education_organization_2.sql"
+   ]
+  ],
+  "why": "This table is already loaded with a recompute strategy. Its `education_org_key` is an MD5 of org id and type with no district or year, so the key is not unique and cannot be used to target a single row for update or delete. Rebuilding avoids relying on that key."
+ },
+ {
+  "table": "dim_grade_type",
+  "grain": "1 row per (`grade_type`, `district`, `year`)",
+  "up": "fact_grade_conf (gold conf)",
+  "shape": "Aggregate - distrinct_values dimension via GROUP BY over the fact table fact_grade_conf",
+  "strat": "Recompute\nAlso: Fix Sequencing",
+  "notes": [
+   "Child data handling: N/A",
+   "Table has 296 total rows in Stg.",
+   "Unrelated bug: there is an ordering issue because this table is loaded one step after fact_grade, though fact_grade depends on it. On a district’s first run, any grade type that hasn’t been seen before is inserted into fact_grade as grade_type_key = NULL."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/dim_grade_type.sql"
+   ]
+  ],
+  "why": "This table is a distinct-values dim built with GROUP BY over `fact_grade_conf`, so a row has no single conf row behind it that could be updated or deleted. When a grade type disappears from the fact table, only a rebuild of the distinct set removes it."
+ },
+ {
+  "table": "dim_parent",
+  "grain": "1 row per (`parent_unique_id`, `schooldistrictid`)",
+  "up": "dim_parent_conf (gold conf)",
+  "shape": "1:1 with dim_parent_conf",
+  "strat": "Dirty Key Upsert (TBD)",
+  "notes": [
+   "Child data handling: Child-level columns that appear: primary_email, primary_phone, address_*. One arbitrary row is chosen. API uses them. Platinum reads email and phone.",
+   "Note: the SQL is in the same file as dim_staff.",
+   "ETL reshapes columns and creates two new surrogate keys from conf: `parent_key` and `migdl_parent_key`.",
+   "The `migdl_` key embeds `ingestionbatchid` and `ingestiontimestamp`, which mean that it should not be used for matching in an upsert.",
+   "Table has 1,148,793 rows in Stg."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/dim_staff.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert, with the choice between MERGE and key-slice-replace still to be decided. The conf source has child fan-out, and the derived table currently keeps one arbitrary row per key (N:1). A MERGE works only if the derived table stays one row per key, with a deterministic pick among the conf rows, a recompute from all current conf rows for a dirty key, and a dedup key that matches the MERGE key. If child rows are kept in derived, the row count per key varies and the table would need key-slice-replace instead. The decision therefore depends on the derived grain decision, and on which child values should be kept. The `migdl_` key embeds the batch id and timestamp, so any MERGE would have to match on the natural key."
+ },
+ {
+  "table": "dim_school_year",
+  "grain": "1 row per `school_year`",
+  "up": "dim_school_year_type (gold conf)",
+  "shape": "aggregate/dedup-coarser. source is per district x year, target collapses across districts.",
+  "strat": "Recompute",
+  "notes": [
+   "Child data handling: N/A",
+   "Table has no district column, so whichever district runs first for a given year wins.",
+   "Later districts for the same year are skipped.is_current_year is stuck and never updated (Stg shows 2025 is current).",
+   "One adjustment from the typical recompute pattern: delete/rebuild does not need to be scoped by school district.",
+   "Table has 4 rows in Stg."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/dim_school_year.sql"
+   ]
+  ],
+  "why": "This table is very small (currently 4 rows, 1 per year). Fully recomputing makes sense rather than engineering a detailed delta. Because this table collapses across districts and has no district column, the recompute won't scope by district."
+ },
+ {
+  "table": "dim_section",
+  "grain": "1 row per (`section_identifier`, `school_id`, `school_year`, `session_name`, `local_course_code`, `schooldistrictid`)",
+  "up": "primary: dim_section_conf (gold conf) enrichment: dim_school, dim_course_offering, and dim_course (all gold conf) and edfi_gold_alldescriptors_metadata",
+  "shape": "1:1 with enrichment",
+  "strat": "Dirty Key Upsert (MERGE)\nNote: must consider dirty keys coming from multiple source tables",
+  "notes": [
+   "Child data handling: N/A",
+   "Table has no fan-out or aggregation (1:1).",
+   "Clear example of the common pattern.",
+   "Good first build target for a MERGE mechanism."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/dim_section.sql"
+   ]
+  ],
+  "why": "This table is the clearest example of this pattern. The grain maps 1:1 with conf, and has no fan-out or agregation. Dirty keys must be derived from the enrichment tables as well as the primary conf table."
+ },
+ {
+  "table": "dim_student",
+  "grain": "1 row per `COALESCE(student_unique_id, state_id), district, year`\nNot well-defined - see notes",
+  "up": "dim_student_conf fanned through fact_student_education_org_assoc, fact_student_enrollment_conf, dim_education_organization, dim_school, plus fact_student_program (derived). Also: dim_session, gold descriptors, student_language_instruction_program, fact_student_special_edu_program_assoc, maisa_school_districts.",
+  "shape": "1:1 entity base from dim_student_conf (INSERT) + multi-source attribute fan-in to compute  boolean program flags (15 sibling UPDATE statements)",
+  "strat": "Dirty Key Upsert (TBD)\nNote: must consider dirty keys coming from multiple source tables",
+  "notes": [
+   "Child data handling: Child columns that appear: is_economically_disadvantaged, is_migrant, is_homeless, is_foster_care, awaiting_foster_care, is_military_connected, is_gifted_talented, race_ethnicity_detail, primary_email, primary_phone, address_*. An arbitrary row is selected from main. API uses them directly. platinum.curated_district_roster selects most.race_ethnicity, is_student_with_discability, is_special_education, is_english_learner are all aggregated. Same consumershome_language, student_language, state_student_id one value is chosen. Same consumers",
+   "Four different formulas are used for the keys (“what defines a student”):  1. dedup partition (local-ID-preferred), 2. output `student_unique_id` column (UIC-preferred, CASE-based), 3. write guard (OR across both) 4. `student_key` surrogate (UIC-preferred, no validity gate).",
+   "Only 1 identity definition should be consistently used in our solution. dim_staff shows the correct pattern: consumers match on a stable raw identifier rather than derived composites.",
+   "Note: proper sequencing is important because dependency on a derived table makes proper sequencing important.",
+   "If the solution template has each table declare its full list of upstream sources, we can order execution topologically and union dirty keys from every source before running MERGE"
+  ],
+  "links": [
+   [
+    "Link_1",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student.sql"
+   ],
+   [
+    "Link_2",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_2.sql"
+   ],
+   [
+    "Link_3",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_3.sql"
+   ],
+   [
+    "Link_4",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_4.sql"
+   ],
+   [
+    "Link_5",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_5.sql"
+   ],
+   [
+    "Link_6",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_6.sql"
+   ],
+   [
+    "Link_7",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_7.sql"
+   ],
+   [
+    "Link_8",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_8.sql"
+   ],
+   [
+    "Link_9",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_9.sql"
+   ],
+   [
+    "Link_10",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_10.sql"
+   ],
+   [
+    "Link_11",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_11.sql"
+   ],
+   [
+    "Link_12",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_12.sql"
+   ],
+   [
+    "Link_13",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_13.sql"
+   ],
+   [
+    "Link_14",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_14.sql"
+   ],
+   [
+    "Link_15",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_15.sql"
+   ],
+   [
+    "Link_16",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/dim_student_16.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert, with the choice between MERGE and key-slice-replace still to be decided. The conf source has child fan-out, and the derived table currently keeps one arbitrary row per key (N:1). A MERGE works only if the derived table stays one row per key, with a deterministic pick among the conf rows, a recompute from all current conf rows for a dirty key, and a dedup key that matches the MERGE key. If child rows are kept in derived, the row count per key varies and the table would need key-slice-replace instead. The decision therefore depends on the derived grain decision, and on which child values should be kept. A MERGE would also need one consistent definition of a student; the table currently uses four different formulas for the key."
+ },
+ {
+  "table": "fact_discipline_action",
+  "grain": "1 row per (`discipline_action_identifier`, `student_unique_id`, `discipline_date`, `schooldistrictid`, `school_year`)",
+  "up": "primary: fact_discipline_action_conf\nenrichment: dim_student, dim_education_organization, dim_school, fact_student_discipline_behavior_assoc, fact_discipline_incident_conf, fact_discipline_incident (derived), fact_student_discipline_incident_assoc, dim_school_year, dim_date, maisa_school_districts, gold descriptors, discipline_descriptor_mapping",
+  "shape": "1:1 with enrichment",
+  "strat": "Dirty Key Upsert (TBD)\nNote: must consider dirty keys coming from multiple source tables",
+  "notes": [
+   "Child data handling: Child-level columns that appear: discipline_type, discipline_type_key, discipline_type_standardized, the incident association references, the behavior association references and key, discipline_behavior_description, staffreference_staffuniqueid. One row is chosen arbitrarily. Platinum and API use these columns.",
+   "Carries denormalized contet columns so it degrades gracefully if the incident/behavior joins miss.",
+   "Note: join to fact_student_discipline_incident_assoc is JOINed but none of its columns appear in the SELECT list.",
+   "Worth removing."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/37057f7a1a3877da67862b0a3285f57f63144c9e/etl/edfi_gold_platinum/sql/gold_derived/fact_discipline_action.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert, with the choice between MERGE and key-slice-replace still to be decided. The conf source has child fan-out, and the derived table currently keeps one arbitrary row per key (N:1). A MERGE works only if the derived table stays one row per key, with a deterministic pick among the conf rows, a recompute from all current conf rows for a dirty key, and a dedup key that matches the MERGE key. If child rows are kept in derived, the row count per key varies and the table would need key-slice-replace instead. The decision therefore depends on the derived grain decision, and on which child values should be kept. The child-level columns it carries (discipline type, incident and behavior references) come from child tables, so the same choice applies to them."
+ },
+ {
+  "table": "fact_discipline_incident",
+  "grain": "1 row per (`incident_identifier`, `school_id`, `schooldistrictid`, `schoolyear`)",
+  "up": "fact_discipline_incident_conf",
+  "shape": "True 1:1 passthrough. Single source.",
+  "strat": "Dirty Key Upsert  (MERGE)",
+  "notes": [
+   "Child data handling: N/A",
+   "This is a very clean example, and would be a good reference alongside dim_section for documentation around MERGE.",
+   "Note: The value of this table is that it adds a dedup step and a stable surrogate key (`discipline_incident_key`).",
+   "Otherwise it is 1:1 with its source conf table."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_discipline_incident.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert (MERGE) fits tables that map 1:1 to their conf grain: each dirty key corresponds to exactly one derived row, so the row can be updated or inserted in place. This is a true passthrough from a single conf table, so it is the cleanest example of the pattern. The table only adds a dedup step and a stable surrogate key."
+ },
+ {
+  "table": "fact_discipline_incident_behavior",
+  "grain": "1 row per (`incident_identifier`, `student_unique_id`, `behavior_code`, `schooldistrictid`)",
+  "up": "primary: fact_student_discipline_behavior_assoc,enriched by fact_discipline_incident_conf, dim_education_organization, dim_student, maisa_school_districts, gold descriptors, and dim_school",
+  "shape": "1:1 with enrichment",
+  "strat": "Dirty Key Upsert (MERGE)\nNote: must consider dirty keys coming from multiple source tables",
+  "notes": [
+   "Child data handling: Needs more analysis. behaviordescriptor is parent-level?",
+   "dim_school is JOINed but never referenced in the SELECT list.",
+   "Note: `schoolyear` is not included in the natural key.",
+   "This should be verified."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_discipline_incident_behavior.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert (MERGE) fits tables that map 1:1 to their conf grain: each dirty key corresponds to exactly one derived row, so the row can be updated or inserted in place. The table is 1:1 with its primary association table plus enrichment, so dirty keys must come from several sources. How the child-level behavior descriptor is handled still needs more analysis."
+ },
+ {
+  "table": "fact_grade",
+  "grain": "1 row per (`student_unique_id`, `section_key`, `grade_type`, `grading_period_key`, `schooldistrictid`, `schoolyear`)",
+  "up": "primary: fact_grade_conf\nenrichment: dim_student, fact_student_enrollment (derived), dim_section (derived), dim_education_organization (derived), dim_school, dim_school_year, dim_grade_type (derived), dim_grading_period, and maisa_school_districts",
+  "shape": "1:1 with enrichment",
+  "strat": "Dirty Key Upsert (MERGE)\nNote: must consider dirty keys coming from multiple source tables",
+  "notes": [
+   "Child data handling: N/A",
+   "Note: the ROW_NUMBER() dedup partitions on 8 columns instead of 6 in the guard.",
+   "It uses (`studentuniqueid`, `sectionidentifier`, `localcoursecode`, `schoolid`, `srcschoolyear`, `gradetypedescriptor`, `gradingperioddescriptor`, `schooldistrictid`)",
+   "Note: today, this table’s load runs before dim_grade_type.",
+   "These should be reversed.",
+   "Also depends on dim_section and is correctly sequenced today for that source."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_grade.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert (MERGE) fits tables that map 1:1 to their conf grain: each dirty key corresponds to exactly one derived row, so the row can be updated or inserted in place. The table is 1:1 with `fact_grade_conf` plus enrichment, including other derived tables, so dirty keys come from several sources and execution order matters."
+ },
+ {
+  "table": "fact_staff_section",
+  "grain": "1 row per (`staff_unique_id`, `section_key`, `schooldistrictid`, `schoolyear`)",
+  "up": "primary: fact_staff_section_association_conf\nenrichment: dim_staff, dim_section (derived), dim_education_organization, dim_school, dim_school_year, dim_date, maisa_school_districts",
+  "shape": "1:1 with enrichment",
+  "strat": "Dirty Key Upsert (MERGE)\nNote: must consider dirty keys coming from multiple source tables",
+  "notes": [
+   "Child data handling: N/A",
+   "Note: the ROW_NUMBER() dedup partitions on 7 columns instead of the 4 in the guard.",
+   "It uses (`staff_unique_id`, `section_identifier`, `school_id`, `schoolyear`, `session_name`, `localcoursecode`, `schooldistrictid`).",
+   "May be okay given the columns `section_key` already encodes."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_staff_section.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert (MERGE) fits tables that map 1:1 to their conf grain: each dirty key corresponds to exactly one derived row, so the row can be updated or inserted in place. The table is 1:1 with `fact_staff_section_association_conf` plus enrichment, so dirty keys must come from several sources."
+ },
+ {
+  "table": "fact_student_academic_record",
+  "grain": "1 row per (`studentreference_studentuniqueid`, `educationorganizationreference_educationorganizationid`, `termdescriptor`, `schoolyeartypereference_srcschoolyear`, `schoolyear`, `schooldistrictid`)",
+  "up": "primary: fact_student_academic_record_conf\nenrichment: fact_student_enrollment (derived), dim_school, dim_school_year, dim_student, maisa_school_districts, and dim_education_organization",
+  "shape": "True aggregation - multiple conf rows collapse into one output row via MAX()",
+  "strat": "Other: Aggregation\nA dirty conf key requires re-running the GROUP BY/pivot for just that (student, org, term, year) key, then merging the single resulting row. Dirty key window may need multiple source tables",
+  "notes": [
+   "Child data handling: Child-level columns that appear in derived: diploma_type, diploma_award_date, cumulative_gpa_unweighted, cumulative_gpa_weighted. Deterministic MAX() is used. only cumulative_gpa_unweighted is read.",
+   "Note: only disappears from output if every underlying conf row for that NK is gone.",
+   "A partial delete just changes the aggregate value next run."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_academic_record.sql"
+   ]
+  ],
+  "why": "Aggregation, which G5 classifies separately from the MERGE tables. Several conf rows collapse into one output row with MAX(), so a dirty conf key requires re-running the GROUP BY or pivot for just that key and then merging the one resulting row. The row only disappears when every underlying conf row for the key is gone, and the dirty-key window may need more than one source table."
+ },
+ {
+  "table": "fact_student_assessment",
+  "grain": "1 row per (`student_unique_id`, `student_assessment_identifier`, `assessment_dim_key`, `administration_date`, `schooldistrictid`, `schoolyear`)",
+  "up": "primary: fact_student_assessment_conf (via temp chain: stg_assessment_base → stg_edfi_assessment_scores → stg_migdl_parent_assessments)\njoins: dim_student, dim_assessment, fact_student_enrollment, dim_education_organization, dim_school_year, dim_date, dim_school, maisa_school_districts",
+  "shape": "1:1 with enrichment, however, source temp table performs aggregation",
+  "strat": "Recompute",
+  "notes": [
+   "Child data handling: Child-level columns that appear in derived: scores and performance and proficiency levels, from the score result and performance level children. One value is used deterministically, pivoted by vendor and reporting method. Platinum reads it and the API reads platinum.",
+   "Any correction to vendor-specific scoring logic lives in the temp tale.",
+   "Current state chain: 1. stg_edfi_assessment_base (first staging pass) 2. stg_edfi_assessment_scores (score normalization across vendors) 3. stg_migdl_parent_assessments (aggregation collapsing multiple raw score rows into one parent row per assessment) Each step recomputes its entire output from scratch, but the load into this table uses insert-only-if-missing.",
+   "No change needed to the temp table chain."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_assessment.sql"
+   ]
+  ],
+  "why": "Recompute. Although the table is 1:1 with `fact_student_assessment_conf`, it is built through a temp-table chain whose steps already recompute their full output each run, and the aggregation happens inside that chain. Any correction to vendor scoring logic lives in the temp tables, so the chain does not need to change; the final load is what needs to stop being insert-only."
+ },
+ {
+  "table": "fact_student_enrollment",
+  "grain": "1 row per (`student_unique_id`, `school_key`, `entry_date`, `schooldistrictid`, `schoolyear`)",
+  "up": "primary: fact_student_enrollment_conf\nenrichment: dim_student, dim_education_organization, dim_school, dim_school_year, dim_school_year_type, dim_calendar_date, maisa_school_districts",
+  "shape": "1:1 with enrichment, + two UPDATE passes for updating `prior_retention` field",
+  "strat": "Dirty Key Upsert (MERGE)\nNote: UPDATE behavior is folded into ordinary columns in the same SELECT rather than separate statements. must consider dirty keys coming from multiple source tables",
+  "notes": [
+   "Child data handling: 4 child groups exist upstream but are unread.",
+   "ROW_NUMBER() dedup uses only 4 conf columns for a key:  (`studentuniqueid`, `schoolid`, `entrydate`, `schooldistrictid`)",
+   "Difference about this table: intra-table dependencies.",
+   "`prior_retention` is defined in terms of what happened in previous years.",
+   "When this table’s own row for (student X, year N) changes, every row for student X in years after N needs to be re-evaluated.",
+   "That is because once the `prior_retention` boolean flips true for a student, it should stay true in subsequent years.",
+   "This can be accomplished by widening the dirty-key set to include all of a student’s existing rows whenever any one of their rows is dirty, or by maintaining a second SQL statement beyond the base MERGE to recalculate `prior_retention`."
+  ],
+  "links": [
+   [
+    "Link_1",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_enrollment.sql"
+   ],
+   [
+    "Link_2",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_enrollment_2.sql"
+   ],
+   [
+    "Link_3",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_enrollment_3.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert (MERGE) fits tables that map 1:1 to their conf grain: each dirty key corresponds to exactly one derived row, so the row can be updated or inserted in place. The table is 1:1 with `fact_student_enrollment_conf` plus enrichment, and the former UPDATE passes are folded into ordinary columns of the same SELECT. One extra consideration is that `prior_retention` depends on a student's earlier years, so a change to one year means the student's later rows must be re-evaluated."
+ },
+ {
+  "table": "fact_student_objective_assessment",
+  "grain": "1 row per  (`student_unique_id`, `objective_assessment_key`, `administration_date`, `schooldistrictid`, `schoolyear`)",
+  "up": "primary: stg_migdl_objective_asesssmentsplus: dim_student, dim_assessment, dim_objective_assessments, fact_student_assessment (derived), dim_school, dim_school_year, dim_date, maisa_school_districts",
+  "shape": "1:1 with enrichment",
+  "strat": "Recompute",
+  "notes": [
+   "Child data handling: Child-level columns that appear: The same objective-level versions as fact_student_assessment.",
+   "Note: ROW_NUMBER partition uses raw conf columns that are slightly different from the driving key mentioned here.",
+   "It uses `objective_assessment_key` (resolved surrogate) and it includes `studentassessmentidentifier` which doesn’t appear in the guard.",
+   "Are there examples of students with more than one `studentassessmentidentifier` for the same objective/date in the source data? If so, this table has been dropping records.",
+   "Note for sequencing: depends on fact_student_assessment."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_objective_assessment.sql"
+   ]
+  ],
+  "why": "Recompute. The primary source is a temp table (`stg_migdl_objective_assessments`), and the table depends on `fact_student_assessment`, which is itself classed as Recompute. The G5 inventory does not give a separate reason for this table."
+ },
+ {
+  "table": "fact_student_parent",
+  "grain": "1 row per (`student_unique_id`, `parent_key`, `schooldistrictid`, `schoolyear`)",
+  "up": "primary: fact_student_parent_assoc_conf\nenrichment: dim_student, dim_parent, fact_student_enrollment (derived)",
+  "shape": "1:1 with enrichment",
+  "strat": "Dirty Key Upsert (MERGE)\nNote: must consider dirty keys coming from multiple source tables",
+  "notes": [
+   "Child data handling: N/A"
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_parent.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert (MERGE) fits tables that map 1:1 to their conf grain: each dirty key corresponds to exactly one derived row, so the row can be updated or inserted in place. The table is 1:1 with `fact_student_parent_assoc_conf` plus enrichment, so dirty keys must come from several sources."
+ },
+ {
+  "table": "fact_student_program",
+  "grain": "",
+  "up": "Four UNION ALL branches: fact_student_special_edu_program_assoc, fact_student_title_itas_program_assoc, fact_student_title_iparta_program_assoc, fact_student_program_conf. Each branch joins fact_student_enrollment, dim_program, dim_school_year, dim_date, maisa_school_districts",
+  "shape": "UNION with prioritization, enrichment",
+  "strat": "Retire - move logic to an inline subquery in dim_student (the only consumer)",
+  "notes": [
+   "Child data handling: Child columns that appear: participation_status, language_instruction_service, disability-based idea_eligibility_category, and the program-support fields. One row is chosen arbitrarily. Not used beyond derived.",
+   "This SQL pattern is more complex.",
+   "Given that there is only one consumer, we could move this to a subquery.",
+   "Because this table evaluates source rows from 4 tables and selects a winner based on priority, a dirty key upsert beeds to be more custom.",
+   "Example: if the SPED source (priority 1) tombstones its row for a key, this table should not have no row - it should obtain whatever the next-highest-priority source says.",
+   "Mechanism: Recompute dirty keys using same 4-union branch union → MERGE → remove keys that produced no winner across any source",
+   "Note: for the current SQL, any joins conducted by all 4 UNION branches could be done once after the UNION."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_program.sql"
+   ]
+  ],
+  "why": "Retire. The table is a four-branch UNION ALL with a priority rule, and `dim_student` is its only consumer, so it adds little as a stored table. A dirty-key upsert would need custom logic, because when the highest-priority source drops a row the table should fall back to the next source, not lose the row. Moving the logic into an inline subquery in `dim_student` avoids that."
+ },
+ {
+  "table": "fact_student_school_attendance",
+  "grain": "1 row per (`student_unique_id`, `school_key`, `event_date`, `attendance_category`, `schooldistrictid`)",
+  "up": "primary: fact_student_school_attendance_conf\nenrichment: dim_education_organization, dim_student, dim_school, dim_school_year, dim_date, dim_session, maisa_school_districts, fact_student_section_nerollment",
+  "shape": "1:1 with enrichment",
+  "strat": "Dirty Key Upsert (MERGE)",
+  "notes": [
+   "Child data handling: N/A",
+   "Note: `schoolyear` is not included in the NK."
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_school_attendance.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert (MERGE) fits tables that map 1:1 to their conf grain: each dirty key corresponds to exactly one derived row, so the row can be updated or inserted in place. The table is 1:1 with `fact_student_school_attendance_conf` plus enrichment."
+ },
+ {
+  "table": "fact_student_section_enrollment",
+  "grain": "1 row per (`student_unique_id`, `section_key`, `schooldistrictid`, `schoolyear`)",
+  "up": "primary: fact_student_section_grade_conf\nenrichment: dim_student, dim_section, dim_education_organization, dim_school_year, dim_school, maisa_school_districts",
+  "shape": "1:1 with enrichment",
+  "strat": "Dirty Key Upsert (MERGE)+ Rename conf table",
+  "notes": [
+   "Child data handling: Needs more analysis",
+   "Note: ROW_NUMBER() partition keys do not match the NK",
+   "Note: source table is incorrectly named"
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_section_enrollment.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert (MERGE) fits tables that map 1:1 to their conf grain: each dirty key corresponds to exactly one derived row, so the row can be updated or inserted in place. The table is 1:1 with its conf table plus enrichment. The rename is separate: the source conf table is named for something other than what it holds."
+ },
+ {
+  "table": "fact_student_section_grade",
+  "grain": "1 row per (`student_unique_id`, `section_key`, `grade_type`, `grading_period_key`, `schooldistrictid`, `schoolyear`)",
+  "up": "primary: fact_student_section_grade_conf\nenrichment: dim_student, fact_grade, dim_grading_period, dim_school",
+  "shape": "1:1 with enrichment",
+  "strat": "Dirty Key Upsert (MERGE)+ Rename conf Table",
+  "notes": [
+   "Child data handling: N/A",
+   "Note: ROW_NUMBER() partition keys do not match the NK",
+   "Note: source table is incorrectly named"
+  ],
+  "links": [
+   [
+    "Link",
+    "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_section_grade.sql"
+   ]
+  ],
+  "why": "Dirty-key upsert (MERGE) fits tables that map 1:1 to their conf grain: each dirty key corresponds to exactly one derived row, so the row can be updated or inserted in place. The table is 1:1 with its conf table plus enrichment. The rename is separate: the source conf table is named for something other than what it holds."
+ }
+];
+/* Notes pages: the G5 inventory analysis for tables without a walkthrough */
+function stratColor(s){
+  if(/^Recompute/.test(s))return "var(--warn)";
+  if(/key-slice-replace/.test(s))return "var(--ok)";
+  if(/^Dirty[- ]key upsert[: ]*\(?MERGE/i.test(s)||/^Dirty-key upsert: MERGE/.test(s))return "var(--accent)";
+  if(/TBD/.test(s))return "var(--faint)";
+  if(/^Retire/.test(s))return "var(--ink-2)";
+  return "transparent";   /* no matching strategy card: No change, Other */
+}
+function rich(s){   /* escape, then turn `code` spans into <code> and keep line breaks */
+  return esc(s).replace(/`([^`]+)`/g,"<code>$1</code>");
+}
+function notesCard(N){
+  var fields=[["Grain &amp; driving key","grain"],["Upstream source tables","up"],["Build shape","shape"],["Candidate strategy","strat"],["Why this strategy","why"],["Notes","notes"]];
+  var card=el("div","ncard");
+  fields.forEach(function(f){
+    var v=N[f[1]];
+    if(v===undefined||v===null||String(v).trim()===""||String(v).trim()==="None")v=null;
+    var body=v===null?'<span class="nnone">None listed in the G5 inventory.</span>':rich(v);
+    if(f[1]==="notes"&&v){
+      var parts=Array.isArray(v)?v:[String(v)];
+      body='<ul class="nbul">'+parts.map(function(x){return '<li>'+rich(x)+'</li>';}).join("")+'</ul>';
+    }
+    var cls="nval"+(f[1]==="strat"&&v?" nstrat":"")+(f[1]==="notes"&&v?" nbullets":"");
+    var st=(f[1]==="strat"&&v)?' style="--c:'+stratColor(v)+'"':'';
+    card.appendChild(el("div","nrow",'<div class="nkey">'+f[0]+'</div><div class="'+cls+'"'+st+'>'+body+'</div>'));
+  });
+  return card;
+}
+function buildNotes(N){
+  var sec=el("section");sec.id=N.table;
+  var W=el("div","wrap");sec.appendChild(W);
+  W.appendChild(el("p","eyebrow",'<a href="#/" class="back">&larr; All tables</a> &nbsp;·&nbsp; Notes'));
+  W.appendChild(el("div","etitle",'<h2>'+esc(N.table)+'</h2> <span class="lyr" style="--c:var(--l-derived)">Gold derived</span>'));
+  W.appendChild(el("p","nsub","Notes from the G5 inventory analysis. A walkthrough has not been created for this table yet."));
+  if(N.links&&N.links.length){
+    var ll=N.links.map(function(l){var f=l[1].split("/").pop();return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener">'+esc(f)+'</a>';}).join(" · ");
+    W.appendChild(el("div","sqllinks sublinks",'<b>SQL links:</b> '+ll));
+  }
+  W.appendChild(notesCard(N));
+  return sec;
+}
+var LAYER_COLOR={"Gold derived":"var(--l-derived)","Gold main":"var(--l-conf)","Platinum":"var(--l-plat)"};
+var MAXROWS=14, MAXBOX=5;
+
+function rowIdx(dims,i){var o=new Array(dims.length),r=i;for(var d=dims.length-1;d>=0;d--){o[d]=r%dims[d].eff;r=Math.floor(r/dims[d].eff);}return o;}
+function childIdx(dm,ix){return (dm.ch.gc&&dm.g>1)?Math.floor(ix/dm.g):ix;}
+function lab(dm,ix){
+  if(dm.n===0)return null;
+  var g=Math.max(1,dm.g);
+  return dm.ch.s+"#"+(dm.ch.gc&&g>1?(Math.floor(ix/g)+1)+"."+(ix%g+1):(ix+1));
+}
+
+function collapsible(parent,headHtml,body,onOpen){
+  var h=el("div","subh tg",'<span class="chev">▶</span>'+headHtml);
+  h.setAttribute("role","button");h.tabIndex=0;h.setAttribute("aria-expanded","false");
+  body.hidden=true;
+  function toggle(){
+    var open=h.getAttribute("aria-expanded")!=="true";
+    h.setAttribute("aria-expanded",String(open));body.hidden=!open;
+    if(open&&onOpen)onOpen();
+  }
+  h.onclick=toggle;
+  h.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle();}};
+  parent.appendChild(h);parent.appendChild(body);
+}
+
+function renderConsumers(E,W){
+  var C=E.consumers;
+  var body=el("div","cons");
+  var read={};C.users.forEach(function(u){u.reads.forEach(function(c){read[c]=(read[c]||0)+1;});});
+  var unread=C.cols.filter(function(c){return !read[c[0]];}).map(function(c){return c[0];});
+
+  /* legend and summary */
+  body.appendChild(el("div","clegend",'<span class="lt">Column source</span>'+C.types.map(function(x){return '<span class="chip"><i class="sw s-'+x[0]+'"></i>'+esc(x[1])+'</span>';}).join("")));
+  body.appendChild(el("p","csum",'Column names in <b>bold</b> are read by at least one known consumer; names in regular weight have none. '+'<b>'+C.cols.length+'</b> columns, <b>'+(C.cols.length-unread.length)+'</b> read by at least one known consumer. Read by none: <span class="mono">'+esc(unread.join(", "))+'</span>.'));
+
+  /* diagram */
+  var wrap=el("div","cwrap"),cv=el("div","ccanvas");wrap.appendChild(cv);
+  var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("class","cwires");cv.appendChild(svg);
+  var grid=el("div","cgrid2");cv.appendChild(grid);
+  var left=el("div","ctable"),mid=el("div"),right=el("div","cusers");
+  grid.appendChild(left);grid.appendChild(mid);grid.appendChild(right);
+  left.appendChild(el("div","ch2",'<b>gold.'+esc(E.id)+'</b><span>every column, with its source</span>'));
+  right.appendChild(el("div","ch2",'<b>Consumers</b><span>who reads the table</span>'));
+  var fan={};C.fan.forEach(function(c){fan[c]=1;});
+  C.cols.forEach(function(c){
+    var r=el("div","crow2 t-"+c[1]+(read[c[0]]?"":" unread"),'<span class="cn">'+esc(c[0])+(fan[c[0]]?' <span class="fanpill" title="The value comes from a child table, so it varies across the flattened conf rows">child</span>':'')+'</span><span class="src">'+esc(c[2])+'</span>');
+    r.dataset.id="col:"+c[0];left.appendChild(r);
+  });
+  var ulist=el("div","ulist");right.appendChild(ulist);
+  C.users.forEach(function(u){
+    var b=el("div","cuser k-"+u.kind,'<b>'+esc(u.label)+'</b><small>'+esc(u.file)+'</small><small>reads '+u.reads.length+' column'+(u.reads.length===1?'':'s')+(u.note?' · '+esc(u.note):'')+'</small>');
+    b.dataset.id="use:"+u.id;ulist.appendChild(b);
+  });
+  body.appendChild(wrap);
+
+  /* callouts */
+  var gaps=C.cols.filter(function(c){return c[1]==="none"&&read[c[0]];}).map(function(c){return c[0];});
+  if(gaps.length)body.appendChild(el("div","pcard cnote",'<b>Read but never populated.</b> The API staff directory selects '+gaps.map(function(g){return '<code>'+esc(g)+'</code>';}).join(" and ")+', but no SQL under etl/edfi_gold_platinum sets them, so they stay NULL.'));
+  body.appendChild(el("p","csum",esc(C.scope)));
+
+  /* wires and tracing */
+  var edges=[],boxes={},paths=[],pinned=null;
+  C.users.forEach(function(u){u.reads.forEach(function(c){edges.push({a:"col:"+c,b:"use:"+u.id,k:u.kind});});});
+  function draw(){
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    boxes={};cv.querySelectorAll("[data-id]").forEach(function(b){boxes[b.dataset.id]=b;});
+    var cr=cv.getBoundingClientRect();if(!cr.width)return;
+    svg.setAttribute("viewBox","0 0 "+cr.width+" "+cr.height);paths=[];
+    edges.forEach(function(e){
+      var A=boxes[e.a],B=boxes[e.b];if(!A||!B)return;
+      var a=A.getBoundingClientRect(),b=B.getBoundingClientRect();
+      var x1=a.right-cr.left,y1=a.top+a.height/2-cr.top,x2=b.left-cr.left,y2=b.top+b.height/2-cr.top,dx=Math.max(30,(x2-x1)*.5);
+      var p=document.createElementNS("http://www.w3.org/2000/svg","path");
+      p.setAttribute("class","cw w-"+e.k);p.setAttribute("d","M"+x1+" "+y1+" C"+(x1+dx)+" "+y1+","+(x2-dx)+" "+y2+","+x2+" "+y2);
+      svg.appendChild(p);paths.push({e:e,p:p});
+    });
+    trace(pinned);
+  }
+  function trace(id){
+    var all=cv.querySelectorAll("[data-id]");
+    if(!id){all.forEach(function(b){b.classList.remove("dim");});paths.forEach(function(x){x.p.classList.remove("dim","on");});return;}
+    var keep={};keep[id]=1;
+    edges.forEach(function(e){if(e.a===id)keep[e.b]=1;if(e.b===id)keep[e.a]=1;});
+    all.forEach(function(b){b.classList.toggle("dim",!keep[b.dataset.id]);});
+    paths.forEach(function(x){var on=x.e.a===id||x.e.b===id;x.p.classList.toggle("dim",!on);x.p.classList.toggle("on",on);});
+  }
+  cv.querySelectorAll("[data-id]").forEach(function(b){
+    b.onmouseenter=function(){trace(b.dataset.id);};
+    b.onmouseleave=function(){trace(pinned);};
+    b.onclick=function(){pinned=(pinned===b.dataset.id)?null:b.dataset.id;trace(pinned);};
+  });
+  window.addEventListener("resize",draw);
+  collapsible(W,'<span class="n">2</span><h3>Known Consumers</h3><p>Which columns of '+esc(E.title)+' are read, and by what. Hover a column or a consumer to trace it.</p>',body,function(){requestAnimationFrame(draw);});
+}
+
+function renderProposal(E,W){
+  var P=E.proposal;
+  var box=el("div","prop");
+  collapsible(W,'<span class="n">3</span><h3>Proposed Delta Correctness Solution</h3><p>How derived could stay correct when silver changes.</p>',box);
+  box.appendChild(el("div","pnote",'<span class="pill warn">'+esc(P.status)+'</span>'));
+  function ul(a){return '<ul>'+a.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+'</ul>';}
+
+  /* 1. current state */
+  var cur=el("div","pcard cur",P.current?'<h4>'+esc(P.current.title)+'</h4><p>'+esc(P.current.summary)+'</p>'+ul(P.current.points):'');
+  box.appendChild(cur);
+
+  /* 2. strategy: assumptions, strategy, mechanism, dirty-key sources */
+  var strat=el("div","pcard strat",'<h4>Proposed Solution: '+esc(P.strategy)+'</h4>');
+  strat.appendChild(el("div","assume",'<b>Assumes G1–G4 are implemented</b>'+ul(P.depends)));
+  strat.appendChild(el("p",null,esc(P.summary)));
+  strat.appendChild(el("p",null,'<b>Why not MERGE?</b> '+esc(P.whyNotMerge)));
+  strat.appendChild(el("h4",null,"Mechanism")).style.marginTop="14px";
+  if(P.mechNote)strat.appendChild(el("p","mnote",'<b>Note:</b> '+esc(P.mechNote)));
+  var st=el("div","steps");
+  P.steps.forEach(function(s){st.appendChild(el("div","step",'<b>'+esc(s.h)+(s.sug?' <span class="sug">suggested</span>':'')+'</b><span>'+esc(s.d)+'</span>'));});
+  strat.appendChild(st);
+  strat.appendChild(el("h4",null,"Candidate dirty-key sources")).style.marginTop="16px";
+  strat.appendChild(el("table","dsrc",'<thead><tr><th>Source table</th><th>Maps to staff by</th><th>What it changes</th></tr></thead><tbody>'+
+    P.sources.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>';}).join("")+'</tbody>'));
+  box.appendChild(strat);
+
+  /* 3. what happens when silver changes */
+  var cs=el("div","pcard");cs.appendChild(el("h4",null,"Current vs. Proposed Behavior"));cs.appendChild(el("div","exlabel","How each approach handles a change in silver. Pick a silver change."));
+  var bt=el("div","scbtns");bt.appendChild(el("span","sclabel","Silver change"));cs.appendChild(bt);
+  var out=el("div");cs.appendChild(out);
+  function rows(a){return a.map(function(r){return '<div class="rs '+(r.s||"")+'">'+esc(r.l)+(r.t?'<small>'+esc(r.t)+'</small>':'')+'</div>';}).join("");}
+  var btns=[];
+  function show(i){
+    var s=P.scenarios[i];
+    btns.forEach(function(b,k){b.setAttribute("aria-pressed",String(k===i));b.style.borderColor=k===i?"var(--accent)":"";b.style.background=k===i?"var(--accent-wash)":"";});
+    out.innerHTML='<div class="sccols">'+
+      '<div class="sccol bef"><h5>gold.dim_staff before</h5>'+rows(s.before)+'</div>'+
+      '<div class="sccol today"><h5>After: today (append-only guard)</h5>'+rows(s.today)+'<div class="nt">'+esc(s.todayNote)+'</div></div>'+
+      '<div class="sccol prop2"><h5>After: proposed (key-slice-replace)</h5>'+rows(s.prop)+'<div class="nt">'+esc(s.propNote)+'</div></div></div>';
+  }
+  P.scenarios.forEach(function(s,i){var b=el("button","btn",esc(s.n));b.type="button";b.onclick=function(){show(i);};bt.appendChild(b);btns.push(b);});
+  show(0);cs.appendChild(el("p",null,'<span class="lay" style="font-size:12.5px;color:var(--muted)">Illustrative rows for one staff member. Yellow rows are stale: they no longer match silver.</span>'));
+  box.appendChild(cs);   /* its own card, after the proposed solution */
+
+  /* 4. open questions, consolidated */
+  var oq=el("div","pcard openq");oq.appendChild(el("h4",null,"Open questions"));
+  var ol=el("ol");
+  P.questions.forEach(function(q){
+    var h='<b>'+esc(q.q)+'</b> '+esc(q.d);
+    if(q.facts)h+='<div class="sub"><b>What we know</b>'+ul(q.facts)+'</div>';
+    if(q.options)h+='<div class="sub"><b>Options to discuss</b>'+ul(q.options)+'</div>';
+    ol.appendChild(el("li",null,h));
+  });
+  oq.appendChild(ol);box.appendChild(oq);
+}
+
+function buildEntity(E){
+  var S={c:{},a:{}};
+  E.children.forEach(function(ch){S.c[ch.k]=ch.def;if(ch.gc)S.c[ch.k+".gc"]=ch.gc.def;});
+  E.assoc.forEach(function(x){S.a[x.k]=x.def;});
+
+  var sec=el("section");sec.id=E.id;
+  var W=el("div","wrap");sec.appendChild(W);
+  W.appendChild(el("p","eyebrow",'<a href="#/" class="back">&larr; All tables</a> &nbsp;·&nbsp; Walkthrough'));
+  W.appendChild(el("div","etitle",'<h2>'+esc(E.title)+'</h2>'+(E.layer?' <span class="lyr" style="--c:'+(LAYER_COLOR[E.layer]||"var(--accent)")+'">'+esc(E.layer)+'</span>':"")));
+  if(E.links)W.appendChild(el("div","sqllinks sublinks",'<b>SQL links:</b> '+E.links.map(function(l){return '<a href="'+GH+l[1]+'" target="_blank" rel="noopener">'+esc(l[0])+'</a>';}).join(" · ")));
+  if(E.g5)W.appendChild(notesCard(E.g5));
+  var w=el("div");
+  collapsible(W,'<span class="n">1</span><h3>Visualization: Grain Today</h3><p>'+esc(E.blurb)+'</p>',w,function(){window.dispatchEvent(new Event("resize"));});
+  var eq=el("div","eq");
+
+  /* controls */
+  var ctl=el("div","ctl");var curName="Typical",cpStatus=null;
+  var prow=el("div","crow");ctl.appendChild(prow);
+  prow.appendChild(el("span","clabel","Example scenarios"));
+  var pre=el("div","presets");prow.appendChild(pre);
+  var presetBtns=[];
+  E.presets.forEach(function(p){
+    var b=el("button","preset",esc(p.n));b.type="button";b.setAttribute("aria-pressed","false");presetBtns.push(b);
+    b.onclick=function(){curName=p.n;presetBtns.forEach(function(x){x.setAttribute("aria-pressed",String(x===b));});
+      E.children.forEach(function(ch){S.c[ch.k]=p.c[ch.k]||0;if(ch.gc)S.c[ch.k+".gc"]=p.c[ch.k+".gc"]===undefined?ch.gc.def:p.c[ch.k+".gc"];});
+      E.assoc.forEach(function(x){S.a[x.k]=p.a[x.k]||0;});refresh();};
+    pre.appendChild(b);
+  });
+  ctl.appendChild(el("div","csep"));
+  var srow=el("div","crow");ctl.appendChild(srow);
+  srow.appendChild(el("span","clabel","Custom scenario"));
+  var steppers=[],cg=el("div","cgroups");srow.appendChild(cg);
+  function mk(label,sub,get,set,cls){
+    var d=el("div","stp"+(cls?" "+cls:""));d.appendChild(el("span","n",esc(label)+(sub?"<small>"+esc(sub)+"</small>":"")));
+    var m=el("button",null,"−"),o=el("output"),p=el("button",null,"+");m.type=p.type="button";
+    m.setAttribute("aria-label","decrease "+label);p.setAttribute("aria-label","increase "+label);
+    m.onclick=function(){set(Math.max(0,get()-1));curName="Custom";refresh();};
+    p.onclick=function(){set(Math.min(5,get()+1));curName="Custom";refresh();};
+    d.appendChild(m);d.appendChild(o);d.appendChild(p);steppers.push({o:o,get:get});return d;
+  }
+  function group(parent,title,hint){
+    var g=el("div","cg");g.appendChild(el("div","cg-t",esc(title)+(hint?' <span>'+esc(hint)+'</span>':'')));
+    var s=el("div","steppers");g.appendChild(s);g.hidden=false;parent.appendChild(g);return s;
+  }
+  var short=function(n){return n.replace(E.parent+"_","");};
+  var gMainC=group(cg,"Silver child tables","rows per "+E.parent);
+  var gMainG=group(cg,"Silver grandchild tables","rows per child row");
+  var gAssoc=group(cg,"Gold main association tables","joined in the derived build, not silver");
+  E.children.forEach(function(ch){
+    gMainC.appendChild(mk(short(ch.t),"",function(){return S.c[ch.k];},function(v){S.c[ch.k]=v;}));
+    if(ch.gc)gMainG.appendChild(mk("↳ "+short(ch.gc.t),"grandchild of "+short(ch.t),function(){return S.c[ch.k+".gc"];},function(v){S.c[ch.k+".gc"]=v;},"gc"));
+  });
+  E.assoc.forEach(function(x){gAssoc.appendChild(mk(x.label,"",function(){return S.a[x.k];},function(v){S.a[x.k]=v;}));});
+
+
+  /* diagram */
+  w.appendChild(eq);
+  var vz=el("div","vizcard");w.appendChild(vz);
+  (function(){
+    var cp=el("div","cpanel");
+    var bar=el("div","cphead");
+    bar.appendChild(el("span","cptitle","Visualization"));
+    var h=el("button","cpbtn",'<span class="cpicon"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M3 5h14M3 10h14M3 15h14"/></g><g fill="var(--surface)" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="5" r="2"/><circle cx="13" cy="10" r="2"/><circle cx="6" cy="15" r="2"/></g></svg></span><span>Options</span>');
+    h.type="button";h.setAttribute("aria-expanded","false");h.setAttribute("aria-controls","opts-"+E.id);ctl.id="opts-"+E.id;ctl.hidden=true;
+    h.onclick=function(){var o=h.getAttribute("aria-expanded")!=="true";h.setAttribute("aria-expanded",String(o));ctl.hidden=!o;};
+    bar.appendChild(h);
+    cp.appendChild(bar);cp.appendChild(ctl);vz.appendChild(cp);
+  })();
+  var dw=el("div","dwrap");vz.appendChild(dw);
+  var cv=el("div","canvas");dw.appendChild(cv);
+  var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("class","wires");cv.appendChild(svg);
+  var cols=el("div","cols");cv.appendChild(cols);
+  var heads=[["1 · Silver","var(--l-silver)"],["2 · Staging","var(--l-stage)"],["3 · Gold main","var(--l-conf)"],["4 · Gold derived","var(--l-derived)"]];
+  var colEl=[],headSub=[];
+  function mkcol(i,mid){
+    var c=el("div","col"+(mid?" mid":""));
+    var h=el("div","ch");h.style.setProperty("--c",heads[i][1]);
+    h.innerHTML="<b>"+heads[i][0]+"</b>";var sub=el("span",null,esc(E.headline[i]));h.appendChild(sub);
+    c.appendChild(h);colEl.push(c);headSub.push(sub);return c;
+  }
+  var gapEl=[];
+  function mkgap(){var g=el("div","gap");var s=el("span");g.appendChild(s);gapEl.push(s);return g;}
+  cols.appendChild(mkcol(0,false));cols.appendChild(mkgap());
+  cols.appendChild(mkcol(1,true));cols.appendChild(mkgap());
+  cols.appendChild(mkcol(2,true));cols.appendChild(mkgap());
+  cols.appendChild(mkcol(3,true));
+  var note=el("div","note");w.appendChild(note);
+  var why=el("div","why");w.appendChild(why);
+  /* findings + links */
+  E.findings.forEach(function(f,i){
+    var n=i+(E.explainCollapse?2:1);
+    w.appendChild(el("div","why",'<h3>Finding '+n+': '+esc(f.t)+'</h3><div class="ftags"><span class="pill layer">'+esc(f.layer)+'</span>'+(f.solved?' <span class="pill solved">✓ Solved by '+esc(f.solved.by)+'</span>':'')+'</div><p class="fdesc">'+esc(f.d)+'</p>'+(f.points?'<ol>'+f.points.map(function(x){return '<li>'+x+'</li>';}).join("")+'</ol>':'')));
+  });
+
+  var edges=[],pinned=null;
+
+  function refresh(){
+    var r=E.sim(S);
+    steppers.forEach(function(s){s.o.textContent=s.get();});
+    var vary=r.dims.filter(function(d){return d.eff>1;});
+
+    eq.innerHTML='<span class="eqlab">Grain Equation:</span><span class="st" style="--c:var(--l-silver)"><b>1</b> staff</span><span class="op">×</span><span>('+
+      (vary.length?vary.map(function(d){return d.eff+' <small>'+d.ch.s+'</small>';}).join(' <span class="op">·</span> '):'1')+
+      ')</span><span class="op">=</span><span class="st" style="--c:var(--l-stage)"><b>'+fmt(r.staging)+'</b> staging</span><span class="op">→</span>'+
+      '<span class="st" style="--c:var(--l-conf)"><b>'+fmt(r.conf)+'</b> conf</span><span class="op">→ collapse to</span>'+
+      '<span class="st" style="--c:var(--l-derived)"><b>'+r.derived+'</b> school'+(r.derived===1?'':'s')+'</span>';
+
+    /* clear columns */
+    colEl.forEach(function(c){while(c.children.length>1)c.removeChild(c.lastChild);});
+    edges=[];
+
+    /* silver */
+    colEl[0].appendChild(el("div","grp","<i>"+esc(E.parent)+"</i> · parent · 1 row"));
+    var P=el("div","box p","staff<small>"+E.parentLabel+"</small>");P.dataset.id="p";colEl[0].appendChild(P);
+    r.dims.forEach(function(d,di){
+      if(d.n===0)return;
+      colEl[0].appendChild(el("div","grp","<i>"+esc(d.ch.t.replace(E.parent+"_",""))+"</i> · "+d.n+" row"+(d.n===1?"":"s")+(d.ch.gc&&d.g>1?" × "+d.g+" "+esc(d.ch.gc.t.replace(E.parent+"_",""))+"":"")));
+      var show=Math.min(d.n,MAXBOX);
+      for(var i=0;i<show;i++){
+        var b=el("div","box",esc(d.ch.s+"#"+(i+1))+(d.ch.gc&&d.g>1?"<small>"+d.g+" "+esc(d.ch.gc.t.replace(E.parent+"_",""))+"</small>":""));
+        b.dataset.id="c:"+d.ch.k+":"+i;colEl[0].appendChild(b);
+      }
+      if(d.n>show){var mb=el("div","box more","+"+(d.n-show)+" more");mb.dataset.id="c:"+d.ch.k+":more";colEl[0].appendChild(mb);}
+    });
+
+    /* staging + conf + derived */
+    var n=Math.min(r.staging,MAXROWS);
+    colEl[1].appendChild(el("div","grp","<i>"+esc(E.stagingTable)+"</i> · "+fmt(r.staging)+" row"+(r.staging===1?"":"s")));
+    colEl[2].appendChild(el("div","grp","<i>dim_staff_conf</i> · primary · "+fmt(r.conf)+" row"+(r.conf===1?"":"s")));
+    colEl[3].appendChild(el("div","grp","<i>"+esc(E.derivedTable)+"</i> · "+r.derived+" row"+(r.derived===1?"":"s")));
+    for(var i=0;i<n;i++){
+      var ix=rowIdx(r.dims,i);
+      var parts=[];vary.forEach(function(d){parts.push(lab(d,ix[r.dims.indexOf(d)]));});
+      var l=parts.length?parts.join(" · "):"1 row";
+      var sb=el("div","box stg",esc(l)+"<small>S"+(i+1)+"</small>");sb.dataset.id="s:"+i;colEl[1].appendChild(sb);
+      var cb=el("div","box cnf",esc(l)+"<small>current</small>");cb.dataset.id="f:"+i;colEl[2].appendChild(cb);
+      edges.push({a:"p",b:"s:"+i,k:"s"});
+      edges.push({a:"s:"+i,b:"f:"+i,k:"f"});
+      r.dims.forEach(function(d,di){
+        if(d.eff<=1)return;
+        var ci=childIdx(d,ix[di]);
+        edges.push({a:"c:"+d.ch.k+":"+(ci<MAXBOX?ci:"more"),b:"s:"+i,k:"c"});
+      });
+    }
+    if(r.staging>n){
+      colEl[1].appendChild(el("div","box more","+"+fmt(r.staging-n)+" more rows"));
+      colEl[2].appendChild(el("div","box more","+"+fmt(r.conf-n)+" more rows"));
+    }
+    var jgs=E.joinGroups?E.joinGroups(r,S):[];
+    jgs.forEach(function(g,gi){
+      colEl[2].appendChild(el("div","grp jg","<i>"+esc(g.table)+"</i> · "+esc(g.tag)));
+      g.rows.forEach(function(row,ri){
+        var id="j:"+gi+":"+ri;
+        var b=el("div","box jn "+(g.kind||"")+(row.cls?" "+row.cls:""),esc(row.label)+(row.sub?"<small>"+esc(row.sub)+"</small>":""));
+        b.dataset.id=id;colEl[2].appendChild(b);
+        (row.to||[]).forEach(function(d){edges.push({a:id,b:"d:"+d,k:"j"});});
+      });
+    });
+    r.schools.forEach(function(s,j){
+      var ix0=rowIdx(r.dims,0);
+      var kept=vary.map(function(d){return lab(d,ix0[r.dims.indexOf(d)]);}).join(" · ")||"—";
+      var db=el("div","box drv","STAFF-1 @ "+esc(s.id)+"<small>"+esc(s.src)+" · kept "+esc(kept)+"</small>");
+      db.dataset.id="d:"+j;colEl[3].appendChild(db);
+      for(var i2=0;i2<n;i2++)edges.push({a:"f:"+i2,b:"d:"+j,k:i2===0?"win":"lose"});
+    });
+
+    /* header counts + gap labels */
+    var silverRows=1+r.dims.reduce(function(a,d){return a+d.n;},0);
+    headSub[0].textContent=E.headline[0]+" · "+silverRows+" rows";
+    headSub[1].textContent=E.headline[1]+" · "+fmt(r.staging);
+    headSub[2].textContent=E.headline[2]+" · "+fmt(r.conf);
+    headSub[3].textContent=E.headline[3]+" · "+r.derived;
+    gapEl[0].textContent=r.staging>1?"fan-out ×"+fmt(r.staging):"1 : 1";
+    gapEl[1].textContent="1 : 1";
+    gapEl[2].textContent=r.conf>1?"1 of "+fmt(r.conf)+" per school":"1 : 1";
+
+    note.innerHTML=r.staging>1
+      ? 'One staff member becomes <b>'+fmt(r.staging)+'</b> staging rows because each child table is joined to the parent independently, so their rows multiply. Gold main keeps all '+fmt(r.conf)+'. Gold derived joins every conf row to every school, then keeps <b>1 of the '+fmt(r.conf)+'</b> for each school (green line, the most recently updated; ties are arbitrary). The red dashed lines are the other '+fmt(r.conf-1)+' for that school; their race, email and phone values are dropped.'
+      : 'Every child has at most one row, so the grain stays 1:1 from silver to gold main, and derived has one row per school.';
+
+    if(E.explainCollapse){
+      var ex=E.explainCollapse(r,S);
+      why.innerHTML="<h3>Finding 1: "+esc(ex.title)+"</h3>"+(ex.layer?'<div class="ftags"><span class="pill layer">'+esc(ex.layer)+"</span></div>":"")+"<ol>"+ex.items.map(function(x){return "<li>"+x+"</li>";}).join("")+"</ol>";
+    }
+    bind();
+    requestAnimationFrame(draw);
+  }
+
+  var paths=[],boxes={};
+  function bind(){
+    boxes={};cv.querySelectorAll(".box[data-id]").forEach(function(b){
+      boxes[b.dataset.id]=b;
+      b.onmouseenter=function(){trace(b.dataset.id);};
+      b.onmouseleave=function(){trace(pinned);};
+      b.onclick=function(){pinned=(pinned===b.dataset.id)?null:b.dataset.id;trace(pinned);};
+      b.tabIndex=0;b.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();b.click();}};
+    });
+    if(pinned&&!boxes[pinned])pinned=null;
+  }
+  function draw(){
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var cr=cv.getBoundingClientRect();
+    svg.setAttribute("viewBox","0 0 "+cr.width+" "+cr.height);
+    paths=[];
+    edges.forEach(function(e){
+      var A=boxes[e.a],B=boxes[e.b];if(!A||!B)return;
+      var a=A.getBoundingClientRect(),b=B.getBoundingClientRect();
+      var x1=a.right-cr.left,y1=a.top+a.height/2-cr.top,x2=b.left-cr.left,y2=b.top+b.height/2-cr.top;
+      var dx=Math.max(24,(x2-x1)*.5);
+      var p=document.createElementNS("http://www.w3.org/2000/svg","path");
+      p.setAttribute("class","w "+e.k);
+      p.setAttribute("d","M"+x1+" "+y1+" C"+(x1+dx)+" "+y1+","+(x2-dx)+" "+y2+","+x2+" "+y2);
+      svg.appendChild(p);paths.push({e:e,p:p});
+    });
+    /* draw lose/win above plain wires */
+    paths.filter(function(x){return x.e.k==="win";}).forEach(function(x){svg.appendChild(x.p);});
+    trace(pinned);
+  }
+  function trace(id){
+    var all=cv.querySelectorAll(".box");
+    if(!id){all.forEach(function(b){b.classList.remove("dim");});paths.forEach(function(x){x.p.classList.remove("dim","on");});return;}
+    var up={},down={};up[id]=down[id]=true;
+    var ch=true;while(ch){ch=false;edges.forEach(function(e){if(up[e.b]&&!up[e.a]){up[e.a]=true;ch=true;}});}
+    ch=true;while(ch){ch=false;edges.forEach(function(e){if(down[e.a]&&!down[e.b]){down[e.b]=true;ch=true;}});}
+    all.forEach(function(b){var k=b.dataset.id;b.classList.toggle("dim",!(up[k]||down[k]));});
+    paths.forEach(function(x){
+      var on=(up[x.e.a]&&up[x.e.b])||(down[x.e.a]&&down[x.e.b]);
+      x.p.classList.toggle("dim",!on);x.p.classList.toggle("on",!!on);
+    });
+  }
+  window.addEventListener("resize",function(){draw();});
+  refresh();
+  if(E.consumers)renderConsumers(E,W);
+  if(E.proposal)renderProposal(E,W);
+  return sec;
+}
+
+(function(){
+  var host=document.getElementById("entities"),nav=document.getElementById("navents");
+  var BASE_TITLE=document.title;
+  ENTITIES.forEach(function(E){
+    host.appendChild(buildEntity(E));
+    var a=el("a","navlink",esc(E.title));a.href="#/"+E.id;nav.appendChild(a);
+  });
+  NOTES.forEach(function(N){host.appendChild(buildNotes(N));});
+
+  /* inventory table */
+  var have={};ENTITIES.forEach(function(E){have[E.id]=true;});
+  var haveNotes={};NOTES.forEach(function(N){haveNotes[N.table]=true;});
+  document.getElementById("inv").innerHTML='<colgroup><col style="width:21%"><col style="width:30%"><col style="width:17%"><col style="width:21%"><col style="width:11%"></colgroup><thead><tr><th>Table</th><th>Driving key</th><th>Build shape</th><th>G5 candidate strategy</th><th>Details</th></tr></thead><tbody>'+
+    INVENTORY.map(function(r){
+      var wt=have[r[0]]?'<a class="pill ok wtl" href="#/'+r[0]+'" aria-label="View the '+r[0]+' walkthrough" title="View walkthrough">Walkthrough &rarr;</a>':(haveNotes[r[0]]?'<a class="pill wtl nl" href="#/'+r[0]+'" aria-label="View the notes for '+r[0]+'" title="View notes from the G5 inventory">Notes &rarr;</a>':'');
+      return '<tr><td>'+esc(r[0])+'</td><td class="dk">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td><span class="shp" style="--c:'+stratColor(r[3])+'">'+esc(r[3])+'</span></td><td class="wtc">'+wt+'</td></tr>';
+    }).join("")+'</tbody>';
+
+  /* platinum inventory: names only for now */
+  document.getElementById("invp").innerHTML='<colgroup><col style="width:21%"><col style="width:30%"><col style="width:17%"><col style="width:21%"><col style="width:11%"></colgroup><thead><tr><th>Table</th><th>Driving key</th><th>Build shape</th><th>G5 candidate strategy</th><th>Details</th></tr></thead><tbody>'+
+    PLATINUM.map(function(n){return '<tr><td>'+esc(n)+'</td><td></td><td></td><td></td><td></td></tr>';}).join("")+'</tbody>';
+
+  /* theme */
+  var root=document.documentElement;
+  document.getElementById("theme").onclick=function(){
+    var dark=root.getAttribute("data-theme")==="dark"||(!root.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme:dark)").matches);
+    root.setAttribute("data-theme",dark?"light":"dark");
+  };
+
+  /* hash router: #/ is the overview, #/<entity> is one entity page */
+  function route(){
+    var h=(location.hash||"").replace(/^#\/?/,"");
+    var cur=ENTITIES.filter(function(E){return E.id===h;})[0]||NOTES.filter(function(N){return N.table===h;}).map(function(N){return {id:N.table,title:N.table};})[0];
+    document.getElementById("home").hidden=!!cur;
+    ENTITIES.forEach(function(E){document.getElementById(E.id).hidden=!cur||cur.id!==E.id;});
+    NOTES.forEach(function(N){document.getElementById(N.table).hidden=!cur||cur.id!==N.table;});
+    document.querySelectorAll(".navlink").forEach(function(l){l.setAttribute("aria-current",String(!!cur&&l.getAttribute("href")==="#/"+cur.id));});
+    document.title=(cur?cur.title+" · ":"")+BASE_TITLE;
+    window.scrollTo(0,0);
+    setTimeout(function(){window.dispatchEvent(new Event("resize"));},0);   /* redraw diagram wires for the shown page */
+  }
+  window.addEventListener("hashchange",route);
+  route();
+})();
+</script>
+</body>
+</html>
