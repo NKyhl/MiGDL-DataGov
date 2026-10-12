@@ -238,6 +238,8 @@ path.cw.w-read{stroke:var(--l-stage)}path.cw.w-write{stroke:var(--ok)}
 .jumps a:hover{border-bottom-color:var(--accent)}
 .scope{margin-top:14px;padding:2px 14px 4px;background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:10px}
 .scope .hnote{margin:10px 0}
+.wipnote{display:flex;gap:10px;align-items:flex-start;margin:12px 0;padding:10px 14px;background:var(--warn-wash);border:1px solid var(--warn);border-left:4px solid var(--warn);border-radius:8px;font-size:14px;color:var(--ink)}
+.wipnote .wipico{color:var(--warn);font-size:16px;line-height:1.4}
 .hsec{scroll-margin-top:60px}
 .ptag{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--muted);margin-left:8px;border:1px solid var(--rule-2);border-radius:999px;padding:1px 8px;vertical-align:middle;white-space:nowrap}
 .slist{margin:8px 0 0;padding-left:22px;font-size:14.5px;color:var(--ink-2);max-width:110ch}
@@ -274,6 +276,9 @@ table.inv{table-layout:fixed;width:100%;min-width:980px}
 table.inv td.dk{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);line-height:1.45;overflow-wrap:anywhere}
 table.inv td:first-child{overflow-wrap:anywhere}
 table.inv td.wtc{white-space:nowrap}
+table.inv td.pk{font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.kchg{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:0 7px;margin-right:6px;vertical-align:1px;white-space:nowrap}
+table.inv td.pk .kwhy{display:block;margin-top:4px;font-size:12px;color:var(--ink-2)}
 .shp{display:inline-block;border-left:4px solid var(--c);padding-left:8px}
 a.wtl{text-decoration:none;font-weight:600;font-size:13px;line-height:1.3;padding:2px 10px}
 a.wtl:hover{background:var(--ok);color:var(--surface);border-color:var(--ok)}
@@ -375,26 +380,30 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <h1>Gold Derived Delta Correctness Analysis</h1>
     <p class="lede">Gold derived tables are loaded append-only, so they miss upstream updates and deletes. This page analyzes
       how each derived table is built today and proposes how to keep it correct as silver and gold main change. Assumes G1&ndash;G4 are implemented.</p>
-    <p class="jumps">Jump to: <a href="#/" data-jump="sec-current">Current State</a> &middot; <a href="#/" data-jump="sec-approach">Suggested Approach</a><span hidden> &middot; <a href="#/" data-jump="sec-mech">Solution Design</a></span> &middot; <a href="#/" data-jump="sec-gold">Table Inventory & Grain Analysis</a><span hidden> &middot; <a href="#/" data-jump="sec-plat">Platinum Table Inventory & Grain Analysis</a></span></p>
+    <p class="jumps">Jump to: <a href="#/" data-jump="sec-current">Current State</a> &middot; <a href="#/" data-jump="sec-approach">Suggested Approach</a> &middot; <span><a href="#/" data-jump="sec-mech">Solution Design</a> &middot; </span><a href="#/" data-jump="sec-gold">Solution by Table</a><span hidden> &middot; <a href="#/" data-jump="sec-plat">Platinum Table Inventory & Grain Analysis</a></span></p>
   </div>
 
   <div class="hsec" id="sec-current">
     <h2>Current State</h2>
 
 
+    <h3 class="hsub">Table Inventory</h3>
+    <p>All 22 gold derived tables are listed below, along with their current driving key and build shape. Every table has a page, linked on the right. Notes pages hold basic analysis and notes gathered from Tiger Team 3 discussion thus far. Walkthrough pages additionally include visualizations for helping readers understand build shape, grain, known consumers, etc.</p>
+    <div class="tblwrap2"><table class="dsrc inv" id="inv"></table></div>
+
     <h3 class="hsub">Properties of the Existing ETL</h3>
     <div class="prows">
-      <div class="hcard"><h4>1. Append-only loads</h4><p>Derived tables load with <code>INSERT &hellip; LEFT JOIN target ON &lt;natural key&gt; WHERE target.&lt;key&gt; IS NULL</code>. There are a few exceptions, but they are not complete: 1) <code>dim_education_organization</code> is deleted and rebuilt. 2) <code>dim_student</code> and <code>fact_student_enrollment</code> run additional SQL UPDATE passes to update some columns.</p></div>
-      <div class="hcard"><h4>2. Child fan-out collapsed arbitrarily</h4><p>While gold main holds one row per silver child combination, derived tables keep one row per key. One gold main row is picked using latest <code>updatetimestamp</code>, but that is equal across child fan-out rows. The outcome is that one gold main row is picked arbitrarily while all other child combinations are lost. Derived tables that do not read any child columns from gold main do not experience data loss, but performance improvements could be made to prevent extracting and joining all conf child combinations.</p></div>
-      <div class="hcard"><h4>3. Not all child columns are used</h4><p>Gold main fans out by child tables, but derived reads only some of them, and for some tables none (for example, none of the four child tables behind <code>dim_student_conf</code>, and 4 of the 18 behind <code>dim_staff_conf</code>). A change to an unread child column does not change the derived row.</p></div>
-      <div class="hcard"><h4>4. Frequent, complex joins</h4><p>The derived layer is built from more frequent and more complex joins. A change or delete in any joined table can change or remove a derived row, so updates and deletes cannot be propagated from one source table alone.</p></div>
+      <div class="hcard"><h4>1. Append-only loads</h4><p>Derived tables load with <code>INSERT &hellip; LEFT JOIN target ON &lt;natural key&gt; WHERE target.&lt;key&gt; IS NULL</code>. There are a few exceptions, but they are only partial solutions: 1) <code>dim_student</code> and <code>fact_student_enrollment</code> run additional SQL UPDATE passes to update some columns. 2) <code>dim_education_organization</code> is deleted and rebuilt.</p></div>
+      <div class="hcard"><h4>2. Child fan-out collapsed arbitrarily</h4><p>While gold main holds one row per silver child combination, derived tables keep one row per key. Derived ETL chooses one gold main row, using latest <code>updatetimestamp</code> to pick, but we know that <code>updatetimestamp</code> is equal across child fan-out rows. The outcome is that one gold main row is picked arbitrarily while all other child combinations are lost. Some derived tables do not read any child columns from gold main, and in that case do not experience data loss, but they still experience worsened performance due to extracting and joining all conf child combinations before the dedup.</p></div>
+      <div class="hcard"><h4>3. Not all gold main child columns are used</h4><p>Gold main fans out by child tables, but derived does not read all of these columns. Some derived tables select no child columns from their gold main source table. Examples: none of the four child tables behind <code>dim_student_conf</code> are selected by <code>dim_student</code>, and 4 of the 18 behind <code>dim_staff_conf</code> are not selected by <code>dim_staff</code>. This means that a change to a child column in gold main does not necessarily change the derived row. It also means that our silver to gold fan-out is not required to serve the derived layer for some entities.</p></div>
+      <div class="hcard"><h4>4. Frequent, complex joins</h4><p>The derived layer is built from more frequent and more complex joins. A change or delete in any joined table can change or remove a derived row, so updates and deletes cannot be detected from one source table alone.</p></div>
       <div class="hcard"><h4>5. Derived tables depend on each other</h4><p>15 of the 22 derived tables read another derived table, such as <code>dim_education_organization</code>, <code>dim_student</code> and <code>fact_student_enrollment</code>. Run order matters. Outliers: 1) <code>fact_grade</code> joins <code>dim_grade_type</code> but is sequenced after, and 2) <code>dim_student</code> and <code>fact_student_program</code> read each other.</p></div>
-      <div class="hcard"><h4>6. No current-row filter on conf reads</h4><p><code>currentflag = TRUE</code> is commented out in the SQL of 13 of the 22 derived tables (for example <code>dim_staff</code>, <code>dim_student</code> and <code>fact_grade</code>), so expired SCD2 versions and TYPE1 delete tombstones can feed derived tables.</p></div>
-      <div class="hcard"><h4>7. Per-statement commits</h4><p>The runner commits after each statement and rolls back only the one that fails, so an error partway through a table's SQL statements leaves the earlier statements committed and the table partly written. Today, this only matters for tables with several statements (<code>dim_student</code>, <code>dim_education_organization</code>, and <code>fact_student_enrollment</code>).</p></div>
-      <div class="hcard"><h4>8. Inconsistent natural key usage</h4><p><code>ROW_NUMBER()</code> dedups are used to keep the most recently updated conf row per key, but some dedups are partitioned on a different set of columns from the append-only guard (assumed natural key). The two can disagree about which rows count as the same.</p></div>
+      <div class="hcard"><h4>6. No current-row filter on conf reads</h4><p><code>currentflag = TRUE</code> is commented out in the SQL of 13 of the 22 derived tables (for example <code>dim_staff</code>, <code>dim_student</code> and <code>fact_grade</code>), so SCD2 expired rows and TYPE1 delete tombstones can feed derived tables.</p></div>
+      <div class="hcard"><h4>7. Per-statement commits</h4><p>The runner commits after each SQL statement and rolls back only the one that fails, so an error partway through a table's SQL statements leaves the earlier statements committed and the table partly written. Today, this only matters for tables with several statements (<code>dim_student</code>, <code>dim_education_organization</code>, and <code>fact_student_enrollment</code>).</p></div>
+      <div class="hcard"><h4>8. Inconsistent natural key usage</h4><p><code>ROW_NUMBER()</code> dedups are used to keep the most recently updated conf row per key, but some dedups are partitioned on a different set of columns than the append-only guard (assumed natural key). The two can disagree about which rows count as the same.</p></div>
       <div class="hcard"><h4>9. Inconsistent student identity</h4><p>Student IDs are resolved with <code>OR</code> conditions in joins, in different orders across tables. This risks fan-out and mismatches.</p></div>
-      <div class="hcard"><h4>10. Volatile keys</h4><p><code>migdl_</code> key columns embed <code>ingestionbatchid</code> and <code>ingestiontimestamp</code>, so they change and should not be used for matching.</p></div>
-      <div class="hcard"><h4>11. Whole district-year rescans</h4><p>Each derived statement is parameterized only by district and year. Nothing narrows it to a batch or a set of keys, so a run evaluates every row for the district and year, and cost follows population, not changes.</p></div>
+      <div class="hcard"><h4>10. Volatile keys</h4><p>Some <code>migdl_</code> key columns, such as <code>migdl_student_key</code>, <code>migdl_staff_key</code> and <code>migdl_fact_key</code>, embed <code>ingestionbatchid</code> and <code>ingestiontimestamp</code>, so a new value is computed whenever a row is inserted again, and they should not be used for matching. Two derived surrogate keys also do this: <code>school_year_key</code> and <code>grade_type_key</code>. Other <code>migdl_</code>-named columns, such as <code>migdl_student_id</code>, are stable. Nothing in the ETL SQL or the API code relies on the volatile keys. We should consider removing or correcting these keys if they are to be used.</p></div>
+      <div class="hcard"><h4>11. Whole district-year rescans</h4><p>Each derived statement is parameterized only by district and year. Nothing narrows it to a batch or a set of keys, so the gold main extract evaluates every row for the district and year, and ETL cost is determined by the gold main population size, not the delta size.</p></div>
     </div>
 
     <h3 class="hsub">What That Means for Delta Correctness</h3>
@@ -411,38 +420,55 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <p class="hnote"><b>The issues noted above do not all need to be solved at once.</b> In our first pass, we can solve all blocking issues for update and delete propagation for data at the parent level, which will greatly improve the experience for MiGDL school districts.</p>
     <p>Later we can revisit how child grain is represented and maintained in the gold and platinum layers, which may involve significant engineering for a smaller correctness impact and may be included in a broader re-architecture of the Redshift layers.</p>
     <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:30%"><col style="width:17%"><col style="width:53%"></colgroup><thead><tr><th>Property</th><th>Treatment</th><th>What we do</th></tr></thead><tbody>
-      <tr><td>1. Append-only loads</td><td><span class="tr solve">Solve</span></td><td>Add update and delete branches, using the refresh strategies under Solution Design (In Progress), chosen per table.</td></tr>
-      <tr><td>4. Frequent, complex joins</td><td><span class="tr solve">Solve</span></td><td>Define what makes a key dirty for each table, across every table it joins.</td></tr>
+      <tr><td>1. Append-only loads</td><td><span class="tr solve">Solve</span></td><td>Add update and delete branches, using the refresh strategies under Solution Design, chosen per table.</td></tr>
+      <tr><td>4. Frequent, complex joins</td><td><span class="tr solve">Solve</span></td><td>Define what makes a key dirty for each table, taking into account each source table that is joined.</td></tr>
       <tr><td>5. Derived tables depend on each other</td><td><span class="tr solve">Solve</span></td><td>Revisit the table load order to ensure all derived-to-derived dependencies are accounted for.</td></tr>
       <tr><td>6. No current-row filter on conf reads</td><td><span class="tr solve">Solve</span></td><td>Read only current conf records, so records that were deleted upstream drop out of derived tables.</td></tr>
       <tr><td>7. Per-statement commits</td><td><span class="tr solve">Solve</span></td><td>Make each delete and re-insert atomic, so a failed statement does not leave a table partly written.</td></tr>
       <tr><td>8. Inconsistent natural key usage</td><td><span class="tr solve">Solve</span></td><td>Define one key per table and use it for the dedup, the existence check and dirty-key detection.</td></tr>
       <tr><td>9. Inconsistent student identity</td><td><span class="tr solve">Solve</span></td><td>Settle one definition of a student and use it consistently across the tables.</td></tr>
-      <tr><td>10. Volatile keys</td><td><span class="tr solve">Solve</span></td><td>The dirty key and the match key should not use the <code>migdl_</code> columns. We could consider removing these columns or making them stable.</td></tr>
+      <tr><td>10. Volatile keys</td><td><span class="tr solve">Solve</span></td><td>Volatile <code>migdl_</code> key columns should not be used for matching or marking records dirty. Nothing relies on them, so we could consider removing those or correcting them.</td></tr>
       <tr><td>11. Whole district-year rescans</td><td><span class="tr some">Solve where possible</span></td><td>Tables using a dirty-key mechanism can narrow each run to only the changed keys. Tables that we decide to fully recompute will still scan the whole district-year.</td></tr>
-      <tr><td>2. Child fan-out collapsed arbitrarily</td><td><span class="tr later">Accepted for now</span></td><td>We will keep today's grain and choose per-table mechanisms to fit it. Child attributes are still picked arbitrarily during loads, unless there is a clear winner (ex: primary email) we can select.</td></tr>
-      <tr><td>3. Not all child columns are used</td><td><span class="tr later">Accepted for now</span></td><td>For now, our solution may mark a derived key dirty due to conf changes in child fields that are not read by derived anyway. These cases would cost extra recompute but not correctness. For now, we will not reduce any child-fanout going into gold staging and gold main, though doing so may improve load performance</td></tr>
+      <tr><td>2. Child fan-out collapsed arbitrarily</td><td><span class="tr later">Accepted for now</span></td><td>We will keep today's grain and choose mechanisms per-table to fit it. Child attributes are still picked arbitrarily during loads, unless there is a clear winner (ex: primary email) we can select.</td></tr>
+      <tr><td>3. Not all child columns are used</td><td><span class="tr later">Accepted for now</span></td><td>For now, our solution could mark a derived key dirty due to conf changes in child fields that are not read by derived anyway. These cases would cost extra recompute but not correctness. For now, we will not reduce any child-fanout going into gold staging and gold main, though doing so may improve load performance</td></tr>
     </tbody></table></div>
     <p class="tcap">Numbers refer to the properties listed under Current State.</p>
   </div>
 
-  <!-- Solution Design is hidden while it is in progress. To show it, remove the hidden attribute here and on the Solution Design link in the "Jump to" line. -->
-  <div class="hsec" id="sec-mech" hidden>
-    <h2>Solution Design</h2>
+  <div class="hsec" id="sec-mech">
+    <h2>Solution Design [DRAFT]</h2>
     <p>This section describes how we propose to solve the properties marked <b>Solve</b> above. Each subsection lists the properties it addresses.</p>
 
     <h3 class="hsub">1. Keys and Identity <span class="ptag">Properties 8, 9, 10</span></h3>
-    <p>A change is tracked with three keys. The <b>conf key</b> is the silver natural key, which identifies a parent record and is shared by every fanned-out row for it. A <b>dirty key</b> is a conf key whose data changed, either in the table's own conf table or in a table it joins. A <b>derived key</b> identifies one row in the derived table. A dirty key maps to one derived key or to several.</p>
-    <div id="v-keys"></div>
-    <p class="tcap">Real keys from the SQL, assuming one conf row per key. District and year are part of every key and are left out. A dirty key is a conf key from the left, and it covers the derived keys it maps to on the right: one each for the discipline incident and student, and one per school for staff.</p>
+    <p>Every delta strategy matches rows on a key: to decide whether a row already exists, to dedup, to find the rows that need recomputing, and to join one derived table to another. When a table's keys are inconsistent, a refresh can miss rows, insert duplicates or touch the wrong ones. So the first step to delta correctness is to define the keys for each derived table and use them consistently.</p>
+
+    <p>Observed discrepancies:</p>
     <ul class="slist">
-      <li>Each table defines <b>one derived key</b> and uses it for the dedup, the existence check and the dirty-key mapping. Today these can disagree.</li>
-      <li>Every table that joins students uses <b>one definition of a student</b>.</li>
-      <li>No key uses the <code>migdl_</code> columns, because they change with every ingestion. Surrogate keys are built deterministically from natural key parts, so a delete and rebuild does not change them. We could consider removing the <code>migdl_</code> columns.</li>
-      <li>Gold key columns must equal the silver natural keys. A delete tombstone carries only silver's keys, so a gap means deletes silently do nothing for that table.</li>
+      <li><b>The dedup and the guard use different columns.</b> <code>fact_grade</code> dedups on 8 columns and guards on 6, and <code>fact_staff_section</code> dedups on 7 and guards on 4.</li>
+      <li><b>The year is missing from one side.</b> <code>fact_discipline_incident_behavior</code> has no <code>schoolyear</code> in its key, and the dedup of five other tables omits the year that their guard includes.</li>
+      <li><b>A key column that can be NULL is compared with <code>=</code>,</b> which never matches NULL, so the same row can be inserted again on every run. This affects <code>grading_period_key</code> in <code>fact_grade</code> and <code>school_key</code> in <code>fact_student_enrollment</code> and <code>fact_student_school_attendance</code>.</li>
+      <li><b>A surrogate key carries parts the guard ignores.</b> <code>fact_student_program</code> hashes the record's education org id and <code>fact_discipline_action</code> hashes the responsibility school, and neither is in the guard.</li>
+      <li><b>A surrogate key is not unique.</b> <code>education_org_key</code> omits district and year, so it cannot target a row.</li>
+    </ul>
+
+    <h4 class="hsub4">Student identity <span class="ptag">Property 9</span></h4>
+    <p>Student ids are resolved with <code>OR</code> conditions in joins, in different orders across tables. <code>dim_student</code> alone uses four formulas: the dedup partition prefers the local id, the output id is CASE-based, the insert guard matches on either id, and the surrogate key hashes the state id first. That risks fan-out and mismatches. Our proposed solution:</p>
+    <ul class="slist">
+      <li>Every table that joins students identifies a student by the raw conf <code>student_unique_id</code>, with district and year. <code>dim_staff</code> already follows this pattern for staff by matching on a stable raw identifier.</li>
+      <li><code>state_student_id</code> is an attribute of the student, not a second key, so no join or insert guard matches on either id.</li>
+    </ul>
+
+    <h4 class="hsub4">Volatile keys <span class="ptag">Property 10</span></h4>
+    <p>Some <code>migdl_</code> key columns, such as <code>migdl_student_key</code>, <code>migdl_staff_key</code> and <code>migdl_fact_key</code>, embed <code>ingestionbatchid</code> and <code>ingestiontimestamp</code>, so a new value is computed whenever a row is inserted again. Two derived surrogate keys do the same: <code>school_year_key</code> in <code>dim_school_year</code> and <code>grade_type_key</code> in <code>dim_grade_type</code>. Other <code>migdl_</code>-named columns, such as <code>migdl_student_id</code>, are stable. Nothing in the ETL SQL or the API code relies on the volatile keys. Our solution:</p>
+    <ul class="slist">
+      <li>No dirty key, derived key or match key uses a volatile <code>migdl_</code> column. Because nothing relies on them, removing them would be low risk, and we could consider it.</li>
+      <li>The two surrogate keys are built from their natural key columns only, so a delete and rebuild does not change them.</li>
     </ul>
 
     <h3 class="hsub">2. Gold Main Extract <span class="ptag">Properties 4, 6, 11</span></h3>
+    <div class="wipnote" role="note"><span class="wipico" aria-hidden="true">&#9888;</span><div><b>This section is in progress!</b> Content is hidden for now.</div></div>
+    <!-- Hidden for now. To restore, remove the hidden attribute from this div and delete the in-progress note above. -->
+    <div hidden>
     <p>Gold derived reads what gold main records about each change. Every conf table carries <code>recordflag</code> (<code>IU</code> or <code>D</code>), <code>ingestionbatchid</code> and <code>currentflag</code>, and a delete leaves one tombstone row per delete event. Finding the dirty keys for a table:</p>
     <ol class="slist">
       <li>Keep a <b>watermark</b> per district: the latest gold main batch already refreshed into derived.</li>
@@ -454,9 +480,10 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <div id="v-extract"></div>
     <p class="tcap">Only rows after the watermark count. B has a tombstone and no current row, so it is deleted.</p>
     <p>A change to a child row re-versions its parent in silver, so the key is dirty even when derived never reads that child column (property 3). Unchanged re-sends do not reach staging, because silver treats them as no-ops, so they should not create dirty keys. Refreshing only dirty keys, instead of scanning the whole district and year, addresses property 11.</p>
+    </div>
 
     <h3 class="hsub">3. Refresh Strategy <span class="ptag">Properties 1, 7</span></h3>
-    <p>A refresh strategy is how one derived table is brought up to date for its dirty keys. It is defined per table, from the table's derived grain and from how a dirty key maps to its derived keys. The Gold Derived Inventory below records the candidate for each table.</p>
+    <p>A refresh strategy is how one derived table is brought up to date for its dirty keys. It is defined per table, from the table's derived grain and from how a dirty key maps to its derived keys. The Solution by Table section below records the candidate for each table.</p>
     <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:13%"><col style="width:22%"><col style="width:19%"><col style="width:25%"><col style="width:21%"></colgroup><thead><tr><th>Strategy</th><th>Fits</th><th>On update</th><th>On delete</th><th>Cost</th></tr></thead><tbody>
       <tr><td><b>Recompute</b></td><td>Any grain.</td><td>The whole district-year slice is deleted and rebuilt.</td><td>The rebuilt slice no longer contains the key.</td><td>Every row is rewritten, changed or not. Deleted rows stay until VACUUM.</td></tr>
       <tr><td><b>MERGE</b></td><td>Each dirty key maps to exactly one derived key, and the mapping is stable.</td><td>The matching row is updated, and a new key is inserted.</td><td>Needs an explicit delete branch for keys with no current rows.</td><td>The source must have at most one row per derived key.</td></tr>
@@ -475,6 +502,9 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <p class="tcap">Green wires mark rows that are written, red dashed wires mark rows that are deleted, and blue wires mark rows that are left alone. The amber box marks a row that is now out of date.</p>
 
     <h3 class="hsub">4. Delete Handling <span class="ptag">Properties 1, 6</span></h3>
+    <div class="wipnote" role="note"><span class="wipico" aria-hidden="true">&#9888;</span><div><b>This section is in progress!</b> Content is hidden for now.</div></div>
+    <!-- Hidden for now. To restore, remove the hidden attribute from this div and delete the in-progress note above. -->
+    <div hidden>
     <p>A delete is the case an append-only load misses entirely. This is its path from silver to gold derived.</p>
     <div id="v-delete"></div>
     <ol class="slist">
@@ -485,6 +515,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
       <li>Tables that read this table treat the key as dirty, so the delete cascades along the dependency graph in section 5.</li>
     </ol>
     <p>A delete only reaches derived if reads exclude tombstones, which is why the current-row filter in section 2 is a prerequisite. A key that is deleted and then re-created ends current, because the current row wins over the earlier tombstone.</p>
+    </div>
 
     <h3 class="hsub">5. Order and Dependencies <span class="ptag">Property 5</span></h3>
     <p>15 of the 22 derived tables read another derived table, so a table must refresh after the tables it reads, and its dirty keys come from them. The graph shows each table's reads, taken from the SQL. Hover a table to trace what it reads and what reads it.</p>
@@ -501,18 +532,14 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <ul class="slist">
       <li><b>Child fan-out:</b> child attributes are still picked arbitrarily, and a child-only change may or may not reach the derived row, until we decide how child grain is represented (properties 2 and 3).</li>
       <li><b>Platinum:</b> not covered. It reads gold derived and gold main, so it needs the same dirty-key step carried one hop further. A derived-only rebuild already includes platinum. Per-table platinum strategies are open.</li>
-      <li><b>Watermark:</b> where it is stored per district, and whether the gold extract identifies unprocessed batches by a high-water mark or by a registry of batches.</li>
-      <li><b>Default strategy:</b> per table, or one template for all of gold derived (section 3).</li>
-      <li><b>Gold main prerequisites:</b> the record flag, transaction support and the pilot must land first. This design assumes them.</li>
-      <li><b><code>dim_student</code> flag passes:</b> tables that run after its passes 7 to 16 also see the final flags. Whether any of them needs those flags is not checked.</li>
       <li><b>DynamoDB-facing views:</b> part of the wider G5 design, not analyzed here.</li>
     </ul>
   </div>
 
   <div class="hsec" id="sec-gold">
-    <h2>Gold Derived Inventory & Grain Analysis</h2>
-    <p>All 22 gold derived tables are listed below, along with their current build shape and proposed G5 candidate strategy. Every table has a page, linked on the right. <b>Walkthrough</b> pages include a visualization of grain through the layers, the known consumers of the table, and the proposed delta correctness solution. <b>Notes</b> pages hold the G5 inventory analysis for tables that do not have a walkthrough yet.</p>
-    <div class="tblwrap2"><table class="dsrc inv" id="inv"></table></div>
+    <h2>Solution by Table [DRAFT]</h2>
+    <p>The proposed natural key and delta mechanism for each of the 22 gold derived tables. A <span class="kchg">Changed</span> marker means the proposed key differs from the current driving key listed under Current State.</p>
+    <div class="tblwrap2"><table class="dsrc inv" id="sbt"></table></div>
   </div>
 
   <!-- Platinum inventory is hidden for now. To restore it, remove the hidden attribute here and on the Platinum link in the "Jump to" line. -->
@@ -1534,7 +1561,7 @@ var NOTES=[
    "Child data handling: Child-level columns that appear: primary_email, primary_phone, address_*. One arbitrary row is chosen. API uses them. Platinum reads email and phone.",
    "Note: the SQL is in the same file as dim_staff.",
    "ETL reshapes columns and creates two new surrogate keys from conf: `parent_key` and `migdl_parent_key`.",
-   "The `migdl_` key embeds `ingestionbatchid` and `ingestiontimestamp`, which mean that it should not be used for matching in an upsert.",
+   "The `migdl_parent_key` embeds `ingestionbatchid` and `ingestiontimestamp`, which mean that it should not be used for matching in an upsert.",
    "Table has 1,148,793 rows in Stg.",
    "Key check: the G5 key omitted `schoolyear`. The insert guard matches on `parent_unique_id`, `schooldistrictid` and `schoolyear`. The dedup partition omits `schoolyear`, which is harmless because each run filters to one school year."
   ],
@@ -1899,7 +1926,7 @@ function notesCard(N){
   fields.forEach(function(f){
     var v=N[f[1]];
     if(v===undefined||v===null||String(v).trim()===""||String(v).trim()==="None")v=null;
-    var body=v===null?'<span class="nnone">None listed in the G5 inventory.</span>':rich(v);
+    var body=v===null?'<span class="nnone">None</span>':rich(v);
     if(f[1]==="notes"&&v){
       var parts=Array.isArray(v)?v:[String(v)];
       body='<ul class="nbul">'+parts.map(function(x){return '<li>'+rich(x)+'</li>';}).join("")+'</ul>';
@@ -2471,7 +2498,8 @@ function buildEntity(E){
   window.addEventListener("resize",function(){draw();});
   refresh();
   if(E.consumers)renderConsumers(E,W);
-  if(E.proposal)renderProposal(E,W);
+  /* hidden for now: restore the next line to show Proposed Delta Correctness Solution */
+  /* if(E.proposal)renderProposal(E,W); */
   return sec;
 }
 
@@ -2490,16 +2518,6 @@ function buildEntity(E){
   /* solution design visuals */
   (function(){
     function mini(id,cls,spec){var h=document.getElementById(id);if(!h)return;var m=el("div","mv"+(cls?" "+cls:""));h.appendChild(m);buildMini(m,spec);}
-    mini("v-keys","",{cols:[
-      [{g:"conf key (silver natural key)"},
-       {id:"c1",t:"incidentidentifier, schoolreference_schoolid",s:"fact_discipline_incident",c:"cnf"},
-       {id:"c2",t:"staffuniqueid",s:"dim_staff",c:"cnf"},
-       {id:"c3",t:"student_unique_id",s:"dim_student",c:"cnf"}],
-      [{g:"derived key"},
-       {id:"d1",t:"incident_identifier, school_id",s:"the same key",c:"drv"},
-       {id:"d2",t:"district_staff_id, schoolid",s:"one derived key per school: the key gains the school",c:"drv"},
-       {id:"d3",t:"student_unique_id or state_student_id",s:"the guard matches on either",c:"drv"}]],
-      edges:[["c1","d1","j"],["c2","d2","j"],["c3","d3","j"]]});
     mini("v-extract","",{cols:[
       [{g:"gold main conf rows"},{id:"r1",t:"A",s:"IU · batch 5",c:"cnf"},{id:"r2",t:"B",s:"D · batch 6 · no current row",c:"cnf"},{id:"r3",t:"C",s:"IU · batch 6",c:"cnf"},{id:"r4",t:"D",s:"IU · batch 3 · before the watermark",c:"cnf",m:true}],
       [{g:"dirty keys · watermark is batch 4"},{id:"k1",t:"A",s:"changed",c:"p"},{id:"k2",t:"B",s:"deleted",c:"more"},{id:"k3",t:"C",s:"changed",c:"p"}]],
@@ -2543,14 +2561,56 @@ function buildEntity(E){
   /* inventory table */
   var have={};ENTITIES.forEach(function(E){have[E.id]=true;});
   var haveNotes={};NOTES.forEach(function(N){haveNotes[N.table]=true;});
-  document.getElementById("inv").innerHTML='<colgroup><col style="width:21%"><col style="width:30%"><col style="width:17%"><col style="width:21%"><col style="width:11%"></colgroup><thead><tr><th>Table</th><th>Driving key</th><th>Build shape</th><th>G5 candidate delta strategy</th><th>Details</th></tr></thead><tbody>'+
+  function wtLink(t){
+    return have[t]?'<a class="pill ok wtl" href="#/'+t+'" aria-label="View the '+t+' walkthrough" title="View walkthrough">Walkthrough &rarr;</a>':(haveNotes[t]?'<a class="pill wtl nl" href="#/'+t+'" aria-label="View the notes for '+t+'" title="View notes from the G5 inventory">Notes &rarr;</a>':'');
+  }
+  document.getElementById("inv").innerHTML='<colgroup><col style="width:24%"><col style="width:42%"><col style="width:20%"><col style="width:14%"></colgroup><thead><tr><th>Table</th><th>Current Driving key</th><th>Current Build shape</th><th>Table Details</th></tr></thead><tbody>'+
     INVENTORY.map(function(r){
-      var wt=have[r[0]]?'<a class="pill ok wtl" href="#/'+r[0]+'" aria-label="View the '+r[0]+' walkthrough" title="View walkthrough">Walkthrough &rarr;</a>':(haveNotes[r[0]]?'<a class="pill wtl nl" href="#/'+r[0]+'" aria-label="View the notes for '+r[0]+'" title="View notes from the G5 inventory">Notes &rarr;</a>':'');
-      return '<tr><td>'+esc(r[0])+'</td><td class="dk">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td><span class="shp" style="--c:'+stratColor(r[3])+'">'+esc(r[3])+'</span></td><td class="wtc">'+wt+'</td></tr>';
+      return '<tr><td>'+esc(r[0])+'</td><td class="dk">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td class="wtc">'+wtLink(r[0])+'</td></tr>';
+    }).join("")+'</tbody>';
+
+  /* solution by table: proposed natural keys, from Keys and Identity */
+  var PK={
+    dim_date:"<code>full_date</code>",
+    dim_education_organization:"<code>education_org_id</code>, <code>education_org_type</code>, <code>schooldistrictid</code>, <code>schoolyear</code>. Target rows by these, not by <code>education_org_key</code>.",
+    dim_grade_type:"<code>grade_type</code>, <code>schooldistrictid</code>, <code>schoolyear</code>, with <code>grade_type_key</code> built from these only",
+    dim_parent:"<code>parent_unique_id</code>, <code>schooldistrictid</code>, <code>schoolyear</code>",
+    dim_school_year:"<code>school_year</code>, with <code>school_year_key</code> built from it only",
+    dim_section:"<code>section_identifier</code>, <code>school_id</code>, <code>school_year</code>, <code>session_name</code>, <code>local_course_code</code>, <code>schooldistrictid</code>",
+    dim_staff:"<code>district_staff_id</code>, <code>schooldistrictid</code>, <code>schoolyear</code>, <code>schoolid</code>",
+    dim_student:"<code>student_unique_id</code>, the raw conf identifier, with <code>schooldistrictid</code> and <code>schoolyear</code>",
+    fact_discipline_action:"<code>discipline_action_identifier</code>, <code>student_unique_id</code>, <code>discipline_date</code>, <code>schooldistrictid</code>, <code>school_year</code>. Whether the responsibility school belongs in the key is open.",
+    fact_discipline_incident:"<code>incident_identifier</code>, <code>school_id</code>, <code>schooldistrictid</code>, <code>schoolyear</code>",
+    fact_discipline_incident_behavior:"<code>incident_identifier</code>, <code>student_unique_id</code>, <code>behavior_code</code>, <code>schooldistrictid</code>, <code>schoolyear</code>",
+    fact_grade:"<code>student_unique_id</code>, <code>section_key</code>, <code>grade_type</code>, <code>grading_period_key</code>, <code>schooldistrictid</code>, <code>schoolyear</code>, with a NULL-safe compare on <code>grading_period_key</code>",
+    fact_staff_section:"<code>staff_unique_id</code>, <code>section_key</code>, <code>schooldistrictid</code>, <code>schoolyear</code>",
+    fact_student_academic_record:"<code>fact_student_academic_record_key</code>, <code>schooldistrictid</code>, <code>school_year</code>, with the dedup partitioned the same way",
+    fact_student_assessment:"<code>student_unique_id</code>, <code>student_assessment_identifier</code>, <code>assessment_dim_key</code>, <code>administration_date</code>, <code>schooldistrictid</code>, <code>schoolyear</code>",
+    fact_student_enrollment:"<code>student_unique_id</code>, <code>school_key</code>, <code>entry_date</code>, <code>schooldistrictid</code>, <code>schoolyear</code>, with a NULL-safe compare on <code>school_key</code>",
+    fact_student_objective_assessment:"<code>student_unique_id</code>, <code>objective_assessment_key</code>, <code>administration_date</code>, <code>schooldistrictid</code>, <code>schoolyear</code>. Whether <code>studentassessmentidentifier</code> belongs in the key is open.",
+    fact_student_parent:"<code>student_unique_id</code>, <code>parent_key</code>, <code>schooldistrictid</code>, <code>schoolyear</code>",
+    fact_student_program:"<code>student_unique_id</code>, <code>program_key</code>, <code>begin_date</code>, <code>schooldistrictid</code>, <code>school_year</code>. Whether the record's education org id belongs in the key is open.",
+    fact_student_school_attendance:"<code>student_unique_id</code>, <code>school_key</code>, <code>event_date</code>, <code>attendance_category</code>, <code>schooldistrictid</code>, with a NULL-safe compare on <code>school_key</code>",
+    fact_student_section_enrollment:"<code>student_unique_id</code>, <code>section_key</code>, <code>schooldistrictid</code>, <code>schoolyear</code>",
+    fact_student_section_grade:"<code>student_unique_id</code>, <code>section_key</code>, <code>grade_type</code>, <code>grading_period_key</code>, <code>schooldistrictid</code>, <code>schoolyear</code>"
+  };
+  /* tables whose proposed key differs from the current driving key, with what changes */
+  var KEYCHG={
+    dim_student:"Raw student_unique_id replaces COALESCE(student_unique_id, state_id).",
+    fact_discipline_incident_behavior:"Adds schoolyear.",
+    fact_grade:"Compares grading_period_key NULL-safe.",
+    fact_student_academic_record:"Keys on the surrogate fact_student_academic_record_key, not the raw columns behind it.",
+    fact_student_enrollment:"Compares school_key NULL-safe.",
+    fact_student_school_attendance:"Compares school_key NULL-safe."
+  };
+  document.getElementById("sbt").innerHTML='<colgroup><col style="width:21%"><col style="width:39%"><col style="width:24%"><col style="width:16%"></colgroup><thead><tr><th>Table</th><th>Proposed natural key</th><th>Proposed delta mechanism</th><th>Table Details</th></tr></thead><tbody>'+
+    INVENTORY.map(function(r){
+      var chg=KEYCHG[r[0]];
+      return '<tr><td>'+esc(r[0])+'</td><td class="pk'+(chg?' chg':'')+'">'+(chg?'<span class="kchg">Changed</span>':'')+(PK[r[0]]||'')+(chg?'<span class="kwhy">'+esc(chg)+'</span>':'')+'</td><td><span class="shp" style="--c:'+stratColor(r[3])+'">'+esc(r[3])+'</span></td><td class="wtc">'+wtLink(r[0])+'</td></tr>';
     }).join("")+'</tbody>';
 
   /* platinum inventory: names only for now */
-  document.getElementById("invp").innerHTML='<colgroup><col style="width:21%"><col style="width:30%"><col style="width:17%"><col style="width:21%"><col style="width:11%"></colgroup><thead><tr><th>Table</th><th>Driving key</th><th>Build shape</th><th>G5 candidate strategy</th><th>Details</th></tr></thead><tbody>'+
+  document.getElementById("invp").innerHTML='<colgroup><col style="width:21%"><col style="width:30%"><col style="width:17%"><col style="width:21%"><col style="width:11%"></colgroup><thead><tr><th>Table</th><th>Driving key</th><th>Build shape</th><th>G5 candidate strategy</th><th>Table Details</th></tr></thead><tbody>'+
     PLATINUM.map(function(n){return '<tr><td>'+esc(n)+'</td><td></td><td></td><td></td><td></td></tr>';}).join("")+'</tbody>';
 
   /* theme */
