@@ -239,8 +239,29 @@ path.cw.w-read{stroke:var(--l-stage)}path.cw.w-write{stroke:var(--ok)}
 .scope{margin-top:14px;padding:2px 14px 4px;background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:10px}
 .scope .hnote{margin:10px 0}
 .wipnote{display:flex;gap:10px;align-items:flex-start;margin:12px 0;padding:10px 14px;background:var(--warn-wash);border:1px solid var(--warn);border-left:4px solid var(--warn);border-radius:8px;font-size:14px;color:var(--ink)}
+.draft{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--warn);background:var(--warn-wash);border:1px solid var(--warn);border-radius:999px;padding:1px 10px;margin-left:-2px;vertical-align:middle}
 .wipnote .wipico{color:var(--warn);font-size:16px;line-height:1.4}
 .hsec{scroll-margin-top:60px}
+.hsub{scroll-margin-top:66px}
+#navbtn{display:none;padding:5px 9px;font-size:16px;line-height:1}
+@media (max-width:1099px){   /* narrow screens: the side nav becomes a dropdown opened by the hamburger button in the header */
+  #navbtn{display:inline-block}
+  #toc{display:none;position:fixed;top:51px;left:0;right:0;z-index:25;max-height:calc(100vh - 51px);overflow-y:auto;background:var(--ground);border-bottom:1px solid var(--rule);box-shadow:0 10px 24px rgba(0,0,0,.14);padding:10px 20px 16px}
+  body.navopen #toc{display:block}
+  #toc .th{display:none}
+}
+@media (min-width:1100px){
+  .homegrid{--tocw:164px;display:grid;grid-template-columns:var(--tocw) minmax(0,1fr);column-gap:28px}
+  .homegrid>*{grid-column:2;min-width:0}
+  .homegrid>#toc{display:block;grid-column:1;grid-row:1 / span 12;align-self:start;position:sticky;top:66px;max-height:calc(100vh - 82px);overflow-y:auto;margin-top:28px;padding-right:6px}
+}
+#toc .th{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 8px 10px}
+#toc ul{list-style:none;margin:0;padding:0}
+#toc a{display:block;text-decoration:none;color:var(--muted);font-size:12.5px;line-height:1.35;padding:4px 10px;border-left:2px solid var(--rule);margin-left:0}
+#toc a:hover{color:var(--ink);border-left-color:var(--rule-2)}
+#toc a.l2{font-family:var(--mono);font-weight:600;color:var(--ink-2);margin-top:8px}
+#toc a.l3{padding-left:22px}
+#toc a.on{color:var(--accent-ink);border-left-color:var(--accent);background:var(--accent-wash)}
 .ptag{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--muted);margin-left:8px;border:1px solid var(--rule-2);border-radius:999px;padding:1px 8px;vertical-align:middle;white-space:nowrap}
 .slist{margin:8px 0 0;padding-left:22px;font-size:14.5px;color:var(--ink-2);max-width:110ch}
 .slist li{margin:6px 0}
@@ -372,15 +393,16 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
   <a class="brand" href="#/" title="Back to the overview">Gold Derived Delta Correctness Analysis</a>
   <span class="sp"></span>
   <button class="btn" id="theme" type="button">Theme</button>
+  <button class="btn" id="navbtn" type="button" aria-label="Open page navigation" aria-expanded="false" aria-controls="toc">&#9776;</button>
 </div></header>
 
-<section id="home" style="border-top:0"><div class="wrap">
+<section id="home" style="border-top:0"><div class="wrap homegrid">
+  <nav id="toc" aria-label="On this page"></nav>
   <div class="mast">
     <p class="eyebrow">MiGDL · Delta ETL correctness · G5</p>
     <h1>Gold Derived Delta Correctness Analysis</h1>
     <p class="lede">Gold derived tables are loaded append-only, so they miss upstream updates and deletes. This page analyzes
       how each derived table is built today and proposes how to keep it correct as silver and gold main change. Assumes G1&ndash;G4 are implemented.</p>
-    <p class="jumps">Jump to: <a href="#/" data-jump="sec-current">Current State</a> &middot; <a href="#/" data-jump="sec-approach">Suggested Approach</a> &middot; <span><a href="#/" data-jump="sec-mech">Solution Design</a> &middot; </span><a href="#/" data-jump="sec-gold">Solution by Table</a><span hidden> &middot; <a href="#/" data-jump="sec-plat">Platinum Table Inventory & Grain Analysis</a></span></p>
   </div>
 
   <div class="hsec" id="sec-current">
@@ -436,7 +458,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
   </div>
 
   <div class="hsec" id="sec-mech">
-    <h2>Solution Design [DRAFT]</h2>
+    <h2>Solution Design <span class="draft">DRAFT</span></h2>
     <p>This section describes how we propose to solve the properties marked <b>Solve</b> above. Each subsection lists the properties it addresses.</p>
 
     <h3 class="hsub">1. Keys and Identity <span class="ptag">Properties 8, 9, 10</span></h3>
@@ -537,7 +559,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
   </div>
 
   <div class="hsec" id="sec-gold">
-    <h2>Solution by Table [DRAFT]</h2>
+    <h2>Solution by Table <span class="draft">DRAFT</span></h2>
     <p>The proposed natural key and delta mechanism for each of the 22 gold derived tables. A <span class="kchg">Changed</span> marker means the proposed key differs from the current driving key listed under Current State.</p>
     <div class="tblwrap2"><table class="dsrc inv" id="sbt"></table></div>
   </div>
@@ -552,7 +574,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
 <div id="entities"></div>
 
 <footer><div class="wrap">
-  <p>Source: <code>MiGreatDataLake/amorphic-cicd</code> <code>etl/edfi_gold_platinum/</code>, derived SQL at commit <code>e9dd9d1</code>; staging join is <code>core/data_preparation.py::build_silver_view</code>. Counts are simulated from the join shapes, not queried.</p>
+  <p>Source: <code>MiGreatDataLake/amorphic-cicd</code> <code>etl/edfi_gold_platinum/</code>, derived SQL at commit <code>e9dd9d1</code>.</p>
 </div></footer>
 
 <script>
@@ -2511,6 +2533,62 @@ function buildEntity(E){
   });
   NOTES.forEach(function(N){host.appendChild(buildNotes(N));});
 
+  /* home page side navigation: built from the visible section and subsection headings, with scroll tracking */
+  (function(){
+    var toc=document.getElementById("toc");if(!toc)return;
+    var items=[],ul=document.createElement("ul");
+    document.querySelectorAll("#home .hsec").forEach(function(sec){
+      if(sec.hidden)return;
+      var h2=sec.querySelector("h2");if(!h2)return;
+      if(!sec.id)return;
+      var hc=h2.cloneNode(true);hc.querySelectorAll(".draft").forEach(function(x){x.remove();});
+      add(sec,hc.textContent.trim(),"l2");
+      sec.querySelectorAll("h3.hsub").forEach(function(h,i){
+        var c=h.cloneNode(true);c.querySelectorAll(".ptag").forEach(function(x){x.remove();});
+        if(!h.id)h.id=sec.id+"-h"+i;
+        add(h,c.textContent.trim(),"l3");
+      });
+    });
+    function add(target,label,cls){
+      var li=document.createElement("li"),a=document.createElement("a");
+      li.className=cls;a.href="#/";a.className=cls;a.textContent=label;
+      var it={t:target,a:a};
+      a.addEventListener("click",function(e){e.preventDefault();setNav(false);locked=it;mark(it);target.scrollIntoView({behavior:"smooth",block:"start"});});
+      li.appendChild(a);ul.appendChild(li);items.push(it);
+    }
+    toc.innerHTML='<p class="th">On this page</p>';toc.appendChild(ul);
+    var nb=document.getElementById("navbtn");
+    function setNav(open){document.body.classList.toggle("navopen",open);if(nb){nb.setAttribute("aria-expanded",String(open));nb.setAttribute("aria-label",open?"Close page navigation":"Open page navigation");}if(open){var on=toc.querySelector("a.on");if(on)on.scrollIntoView({block:"nearest"});}}
+    if(nb){
+      nb.addEventListener("click",function(e){e.stopPropagation();setNav(!document.body.classList.contains("navopen"));});
+      document.addEventListener("click",function(e){if(document.body.classList.contains("navopen")&&!toc.contains(e.target))setNav(false);});
+      document.addEventListener("keydown",function(e){if(e.key==="Escape")setNav(false);});
+      window.addEventListener("resize",function(){if(innerWidth>=1100)setNav(false);});
+      window.addEventListener("hashchange",function(){setNav(false);});
+    }
+    var tick=false,locked=null;   /* locked: the clicked entry stays highlighted until the reader scrolls on their own */
+    function mark(cur){
+      items.forEach(function(it){it.a.classList.toggle("on",it===cur);});
+      if(cur){var r=cur.a.getBoundingClientRect(),b=toc.getBoundingClientRect();if(r.top<b.top||r.bottom>b.bottom)cur.a.scrollIntoView({block:"nearest"});}
+    }
+    function spy(){
+      tick=false;
+      if(locked||document.getElementById("home").hidden)return;
+      var cur=items[0]||null;
+      items.forEach(function(it){if(it.t.getBoundingClientRect().top<=110)cur=it;});
+      mark(cur);
+    }
+    ["wheel","touchmove","keydown"].forEach(function(ev){window.addEventListener(ev,function(){if(locked){locked=null;spy();}},{passive:true});});
+    window.addEventListener("scroll",function(){if(!tick){tick=true;requestAnimationFrame(spy);}},{passive:true});
+    window.addEventListener("hashchange",function(){setTimeout(spy,50);});
+    spy();
+  })();
+
+  /* header title: on the home page it scrolls to the top (the link target is already the current hash, so it would do nothing) */
+  document.querySelector(".brand").addEventListener("click",function(e){
+    if(!document.getElementById("home").hidden){e.preventDefault();window.scrollTo({top:0,behavior:"smooth"});}
+  });
+
   /* jump links */
   document.querySelectorAll("a[data-jump]").forEach(function(a){
     a.addEventListener("click",function(e){e.preventDefault();var t=document.getElementById(a.getAttribute("data-jump"));if(t)t.scrollIntoView({behavior:"smooth",block:"start"});});
@@ -2564,7 +2642,7 @@ function buildEntity(E){
   function wtLink(t){
     return have[t]?'<a class="pill ok wtl" href="#/'+t+'" aria-label="View the '+t+' walkthrough" title="View walkthrough">Walkthrough &rarr;</a>':(haveNotes[t]?'<a class="pill wtl nl" href="#/'+t+'" aria-label="View the notes for '+t+'" title="View notes from the G5 inventory">Notes &rarr;</a>':'');
   }
-  document.getElementById("inv").innerHTML='<colgroup><col style="width:24%"><col style="width:42%"><col style="width:20%"><col style="width:14%"></colgroup><thead><tr><th>Table</th><th>Current Driving key</th><th>Current Build shape</th><th>Table Details</th></tr></thead><tbody>'+
+  document.getElementById("inv").innerHTML='<colgroup><col style="width:27%"><col style="width:40%"><col style="width:19%"><col style="width:14%"></colgroup><thead><tr><th>Table</th><th>Current Driving key</th><th>Current Build shape</th><th>Table Details</th></tr></thead><tbody>'+
     INVENTORY.map(function(r){
       return '<tr><td>'+esc(r[0])+'</td><td class="dk">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td class="wtc">'+wtLink(r[0])+'</td></tr>';
     }).join("")+'</tbody>';
@@ -2603,7 +2681,7 @@ function buildEntity(E){
     fact_student_enrollment:"Compares school_key NULL-safe.",
     fact_student_school_attendance:"Compares school_key NULL-safe."
   };
-  document.getElementById("sbt").innerHTML='<colgroup><col style="width:21%"><col style="width:39%"><col style="width:24%"><col style="width:16%"></colgroup><thead><tr><th>Table</th><th>Proposed natural key</th><th>Proposed delta mechanism</th><th>Table Details</th></tr></thead><tbody>'+
+  document.getElementById("sbt").innerHTML='<colgroup><col style="width:28%"><col style="width:35%"><col style="width:22%"><col style="width:15%"></colgroup><thead><tr><th>Table</th><th>Proposed natural key</th><th>Proposed delta mechanism</th><th>Table Details</th></tr></thead><tbody>'+
     INVENTORY.map(function(r){
       var chg=KEYCHG[r[0]];
       return '<tr><td>'+esc(r[0])+'</td><td class="pk'+(chg?' chg':'')+'">'+(chg?'<span class="kchg">Changed</span>':'')+(PK[r[0]]||'')+(chg?'<span class="kwhy">'+esc(chg)+'</span>':'')+'</td><td><span class="shp" style="--c:'+stratColor(r[3])+'">'+esc(r[3])+'</span></td><td class="wtc">'+wtLink(r[0])+'</td></tr>';
@@ -2625,6 +2703,7 @@ function buildEntity(E){
     var h=(location.hash||"").replace(/^#\/?/,"");
     var cur=ENTITIES.filter(function(E){return E.id===h;})[0]||NOTES.filter(function(N){return N.table===h;}).map(function(N){return {id:N.table,title:N.table};})[0];
     document.getElementById("home").hidden=!!cur;
+    var nbtn=document.getElementById("navbtn");if(nbtn)nbtn.hidden=!!cur;
     ENTITIES.forEach(function(E){document.getElementById(E.id).hidden=!cur||cur.id!==E.id;});
     NOTES.forEach(function(N){document.getElementById(N.table).hidden=!cur||cur.id!==N.table;});
     document.title=(cur?cur.title+" · ":"")+BASE_TITLE;
