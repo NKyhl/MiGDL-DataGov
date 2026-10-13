@@ -518,11 +518,11 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     </ul>
     <p>An <code>OR</code> join can match more than one row, so a student's facts can duplicate, and tables can resolve the same student differently. A student whose derived id changes, for example when a state id arrives later, can also be inserted twice.</p>
 
-    <p>Our proposed solution:</p>
+    <!-- <p>Our proposed solution:</p>
     <ul class="slist">
       <li>Every table that joins students identifies a student by the raw <code>student_unique_id</code> from conf (what becomes <code>district_student_id</code> in <code>dim_student</code>), with district and year. <code>dim_staff</code> already follows this pattern for staff by matching on a stable raw identifier.</li>
       <li><code>state_student_id</code> is an attribute of the student, not a second key, so no join or insert guard matches on either id. The API can still look students up by any of the three ids, because those lookups filter on an attribute and do not match rows between tables.</li>
-    </ul>
+    </ul> -->
 
     <h4 class="hsub4" id="vk">Volatile Keys <span class="ptag">Property 10</span></h4>
     <p>Volatile keys are keys that are generated with <code>ingestionbatchid</code> or <code>ingestiontimestamp</code> embedded in their hash. Because those fields change when a gold main row is recomputed (exists today) or reversioned on update (after G3/G4 implementation), these keys are not stable enough to be used for matching in ETL, as the source for determining if a key is dirty, or for JOINs.</p>
