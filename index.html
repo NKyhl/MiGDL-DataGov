@@ -17,7 +17,7 @@
   --rule:#DBE2EB;--rule-2:#C3CEDB;
   --accent:#2F5FA8;--accent-ink:#24497F;--accent-wash:#E5EDF8;
   --bad:#B4231F;--bad-wash:#FBEAE8;--warn:#B45309;--warn-wash:#FDF1E1;--ok:#15803D;--ok-wash:#E4F5EA;
-  --l-silver:#8B97A3;--l-stage:#5B87C4;--l-conf:#D9A400;--l-derived:#B98A00;--l-plat:#8267A8;--l-api:#1F7A6B;--l-temp:#5B87C4;--hl-teal:#0E8C8C;
+  --l-silver:#8B97A3;--l-stage:#5B87C4;--l-conf:#D9A400;--l-derived:#B98A00;--l-plat:#8267A8;--l-api:#1F7A6B;--l-temp:#5B87C4;--hl-teal:#0E8C8C;--hl-magenta:#A63A96;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 }
@@ -27,14 +27,14 @@
   --rule:#22303B;--rule-2:#2F404E;
   --accent:#7BA7E8;--accent-ink:#A5C4F2;--accent-wash:#152740;
   --bad:#F87171;--bad-wash:#2A1719;--warn:#F0A93B;--warn-wash:#2B2113;--ok:#4ADE80;--ok-wash:#112619;
-  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;--hl-teal:#4CC9C9;}}
+  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;--hl-teal:#4CC9C9;--hl-magenta:#E070B8;}}
 :root[data-theme="dark"]{
   --ground:#0C1218;--surface:#141D26;--surface-2:#1A252F;--sunk:#0F1922;
   --ink:#E3EBF3;--ink-2:#BECDDA;--muted:#8496A7;--faint:#647689;
   --rule:#22303B;--rule-2:#2F404E;
   --accent:#7BA7E8;--accent-ink:#A5C4F2;--accent-wash:#152740;
   --bad:#F87171;--bad-wash:#2A1719;--warn:#F0A93B;--warn-wash:#2B2113;--ok:#4ADE80;--ok-wash:#112619;
-  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;--hl-teal:#4CC9C9;}
+  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;--hl-teal:#4CC9C9;--hl-magenta:#E070B8;}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:70px}
 body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;margin:0;-webkit-font-smoothing:antialiased}
@@ -278,16 +278,39 @@ a.kwl:hover{text-decoration:underline}
 .hsub4{font-family:var(--mono);font-size:14px;font-weight:600;margin:18px 0 0;scroll-margin-top:66px}
 .ovw .mcols{gap:34px}
 .dag{margin-top:10px;padding:10px 12px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--surface-2);overflow-x:auto}
-.dag .dagcols{position:relative;display:flex;gap:46px;align-items:flex-start;min-width:1000px}
+.dag .dagcols{position:relative;display:flex;gap:46px;align-items:stretch;min-width:1000px}
 .dag .dagcol{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
-.dag .box.flag{border-color:var(--warn);background:var(--warn-wash);border-left:4px solid var(--warn);color:var(--ink)}
-.dag .box.split{border-style:dashed}
+.dag .stgsep{flex:1 1 auto;min-height:18px}
+.dag .box{position:relative}
+.dag .bdg{position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;box-shadow:0 0 0 2px var(--surface-2);z-index:2}
+.dag .bdg.o{background:var(--warn)}
+.dag .bdg.t{background:var(--hl-teal)}
+.dag .bdg.s{background:var(--l-temp)}
+.dag .bdg.g{background:var(--ok)}
 ol.slist.flags{list-style:none;counter-reset:fl;padding-left:32px}
 ol.slist.flags>li{counter-increment:fl;position:relative}
-ol.slist.flags>li::before{content:counter(fl);position:absolute;left:-32px;top:1px;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 11px/1 var(--mono);color:var(--ground)}
+ol.slist.flags>li::before{content:"";position:absolute;left:-32px;top:1px;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 11px/1 var(--mono);color:var(--ground)}
 ol.slist.flags>li.o::before{background:var(--warn)}
 ol.slist.flags>li.t::before{background:var(--hl-teal)}
-.dag .box.flag2{border-style:solid;border-color:var(--hl-teal);background:color-mix(in srgb,var(--hl-teal) 14%,var(--surface));border-left:4px solid var(--hl-teal);color:var(--ink)}
+p.noteb{position:relative;padding-left:32px;font-size:14.5px;color:var(--ink-2);margin-top:8px}
+p.noteb::before{content:"";position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:50%}
+p.noteb.g::before{background:var(--ok)}
+ol.slist.flags>li.r::before{background:var(--l-temp)}
+ol.slist.flags>li.m::before{background:var(--hl-magenta)}
+.loadcols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px;max-width:900px}
+.loadcols h5{margin:0 0 6px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+ul.lo{list-style:none;margin:0;padding:0;border:1px solid var(--rule);border-radius:8px;background:var(--surface);overflow:hidden}
+ul.lo li{display:flex;gap:10px;padding:3px 10px;border-bottom:1px solid var(--rule);font-size:13px;line-height:1.4}
+ul.lo li:last-child{border-bottom:0}
+ul.lo .no{flex:none;width:58px;font-family:var(--mono);font-size:11.5px;color:var(--muted);padding-top:1px}
+ul.lo small{color:var(--muted);font-size:11.5px;margin-left:4px}
+ul.lo li.grn{background:var(--ok-wash);box-shadow:inset 3px 0 0 var(--ok)}
+ul.lo li.chg{background:var(--warn-wash);box-shadow:inset 3px 0 0 var(--warn)}
+ul.lo li.stg{background:color-mix(in srgb,var(--l-temp) 12%,var(--surface));box-shadow:inset 3px 0 0 var(--l-temp)}
+ul.lo li.gone{background:color-mix(in srgb,var(--hl-magenta) 12%,var(--surface));box-shadow:inset 3px 0 0 var(--hl-magenta);color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted)}
+ul.lo li.gone small{text-decoration:none;display:inline-block}
+@media (max-width:760px){.loadcols{grid-template-columns:1fr}}
+.dag .box.stg{border-style:dotted}
 .dag .box{overflow-wrap:normal}
 .tcap{font-size:13px;color:var(--muted);margin:8px 0 0}
 .tr{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--rule-2);background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
@@ -530,6 +553,14 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
       <li><code>state_student_id</code> is an attribute of the student, not a second key, so no join or insert guard matches on either id. The API can still look students up by any of the three ids, because those lookups filter on an attribute and do not match rows between tables.</li>
     </ul> -->
 
+    <p>Open items:</p>
+    <ul class="slist">
+      <li><b>Natural key and timing:</b> which identifier is the natural key for <code>dim_student</code>, and whether to account for it in the first pass, in steps, or later.</li>
+      <li><b><code>student_key</code>:</b> whether it is rebuilt from that identifier or keeps its stored values.</li>
+      <li><b>Downstream ids:</b> whether facts and DynamoDB keep storing the derived id.</li>
+      <li><b>Impact:</b> whether the duplicate students reach the API or DynamoDB. We have not checked.</li>
+    </ul>
+
     <h4 class="hsub4" id="vk">Volatile Keys <span class="ptag">Property 10</span></h4>
     <p>Volatile keys are keys that are generated with <code>ingestionbatchid</code> or <code>ingestiontimestamp</code> embedded in their hash. Because those fields change when a gold main row is recomputed (exists today) or reversioned on update (after G3/G4 implementation), these keys are not stable enough to be used for matching in ETL, as the source for determining if a key is dirty, or for JOINs.</p>
     <p>Today, most of these volatile keys are not read at all, so there is little to no impact. However, there are two gold derived keys that are used as foreign keys in other tables, and a rebuild of the source table would leave those stored values pointing at nothing. We recommend explicitly deprecating or removing these keys where they are not needed anymore to prevent error or to correct the hashes for keys that we do want to use for matching, joins, or dirty key sourcing.</p>
@@ -554,20 +585,117 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <p class="tcap"><b>Note for Platinum Layer Analysis:</b> <code>component_key</code> is volatile and used as a foreign key in <code>platinum.dim_miread_literacy_component</code>. It hashes the current time, so it changes on every run.</p>
 
     <h3 class="hsub">2. Order and Dependencies <span class="ptag">Property 5</span></h3>
-    <p>The next step to a gold derived delta correctness solution is to understand the table-to-table dependencies that exist within the layer. 15 of the 22 derived tables read another derived table, so a table must refresh after the tables it reads, and its dirty keys must come from them.</p>
-    <p>The graph below shows the read dependencies between gold derived tables today, taken from the SQL. Each table shows its sequence number(s) in the load order today (&ldquo;#N&rdquo;, or a range when a table has several steps). Hover a table to trace what it reads and what reads it.</p>
+    <p>The next step to achieving a gold derived delta correctness solution is to understand the table-to-table dependencies that exist within the layer. 15 of the 22 derived tables read another derived table, so a table must refresh after the tables it reads, and its dirty keys must come from them.</p>
+    <h4 class="hsub4">Table Dependency Analysis</h4>
+    <p>The graph below shows the read dependencies between gold derived tables today, taken from the SQL. Each table shows its sequence number(s) in the load order today (&ldquo;#N&rdquo;, or a range when a table has several steps). Some tables have a colored dot, which corresponds to a specific note below the visual. Hover over a table to trace what it reads and what reads it.</p>
     <div id="v-dag"></div>
-    <p class="tcap">Each column is one layer of a topological sort. Tables in a layer can load in any order, and every layer follows the one before it. Where a table has several steps, the range shows all of them. #41 to #47 are platinum staging steps that run inside this step, so they have no node.</p>
+    <p class="tcap">Each column is one layer of a topological sort. Tables in a layer can load in any order, and every layer follows the one before it. Where a table has several steps in the current state, the "today" range shows all of them. Boxes with a dotted border are temp-table staging steps (#36 to #38 and #40) that feed gold derived tables. There are additional staging table steps that are only read by platinum (#41 to #47), but these are not shown above.</p>
     <p>Load order is that topological sort. Today's order is already valid except in two places:</p>
     <ol class="slist flags">
-      <li class="o"><b><code>fact_grade</code></b> reads <code>dim_grade_type</code> but loads one position before it. <code>dim_grade_type</code> reads no other derived table, so it can move ahead of <code>fact_grade</code>. Both are highlighted in orange in the graph.</li>
-      <li class="t"><b><code>dim_student</code> and <code>fact_student_program</code></b> read each other, which looks like a cycle between tables. It is not a cycle between statements: <code>dim_student</code>'s insert and flag passes 2 to 6 read no derived table, and its passes 7 to 16 read <code>fact_student_program</code>. Splitting <code>dim_student</code> into those two nodes, as in the graph, removes the cycle. Both <code>dim_student</code> nodes and <code>fact_student_program</code> are highlighted in teal in the graph.</li>
+      <li class="o"><b><code>fact_grade</code></b> reads <code>dim_grade_type</code> but loads one position before it. <code>dim_grade_type</code> reads no other derived table, so it can move ahead of <code>fact_grade</code>. Both are marked with an orange circle in the graph.</li>
+      <li class="t"><b><code>dim_student</code> and <code>fact_student_program</code></b> read each other, which looks like a cycle between tables. It is not a cycle between statements: <code>dim_student</code>'s insert and flag passes 2 to 6 read no derived table, and its passes 7 to 16 read <code>fact_student_program</code>. Splitting <code>dim_student</code> into those two nodes, as in the graph, removes the cycle. Both <code>dim_student</code> nodes and <code>fact_student_program</code> are marked with a teal circle in the graph.</li>
+        </ol>
+
+    <p>There are also two tables which share a step today (and SQL file). We can separate these:</p>
+    <p class="noteb g"><code>dim_staff</code> and <code>dim_parent</code> load in one step today (#10) because <code>dim_staff.sql</code> includes SQL to build both tables. There is no dependency between the tables, and we propose splitting them into two steps, in separate SQL files.</p>
+
+    <p>Separately, the gold derived load also builds staging temp tables, which exist only during the gold derived connection. Some are necessary, and others are wasted compute:</p>
+    <ol class="slist flags">
+      <li class="m"><b>TEMP table steps #41–#47 are never used in derived and should be removed (not shown).</b> These steps in today's gold derived load build staging temp tables that gold derived does not use, so that compute is wasted. The same steps already run in the platinum layer load, where they are needed. Additionally, <code>stg_miread_foa_join</code> (step #47) reads <code>fact_student_objective_assessment</code> (step #48), which is out of order. We should remove all of these steps from <code>gold_derived.yaml</code>.</li>
+      <li class="r"><b>TEMP table steps #36–#38 and #40 are used in derived and built again in platinum.</b> These staging tables are used by gold derived. They feed <code>fact_student_assessment</code> (#39) and <code>fact_student_objective_assessment</code> (#48), and they are shown in the graph with dotted borders and a blue circle. However, they only live during the life of the transaction. Platinum needs them too, and its load builds them again. We could consider making these tables persistent so we do not build them twice.</li>
     </ol>
-    <p>Dirty keys follow the same edges: a changed key in a table dirties the keys that read it. <code>dim_student</code>, <code>dim_education_organization</code> and <code>dim_school_year</code> have the most readers (12, 11 and 10, respectively), so a change to them reaches the most tables.</p>
+    <p>Dirty keys should follow the same edges: a changed key in one table dirties the keys that read it. <code>dim_student</code>, <code>dim_education_organization</code> and <code>dim_school_year</code> have the most readers (12, 11 and 10, respectively), so a change to them reaches the most tables.</p>
+
+    <h4 class="hsub4">Proposed Solution</h4>
+    <p>Move <code>dim_grade_type</code> ahead of <code>fact_grade</code>, split <code>dim_staff</code> and <code>dim_parent</code> into separate steps, and remove steps #41 through #47 from the gold derived load. The rest of the order is valid. <code>dim_student</code> stays in two parts until the open item below is resolved. In the proposed order, each entity has one SQL file with several statements, so each entity gets one number in our proposed solution.</p>
+    <div class="loadcols">
+      <div>
+        <h5>Existing load order</h5>
+        <ul class="lo">
+        <li class=""><span class="no">#0</span><span><code>dim_date</code></span></li>
+        <li class=""><span class="no">#1</span><span><code>dim_school_year</code></span></li>
+        <li class=""><span class="no">#2–#3</span><span><code>dim_education_organization</code></span></li>
+        <li class=""><span class="no">#4–#9</span><span><code>dim_student</code> <small>insert and updates 2–6</small></span></li>
+        <li class="grn"><span class="no">#10</span><span><code>dim_staff</code> and <code>dim_parent</code> <small>one SQL file</small></span></li>
+        <li class=""><span class="no">#11</span><span><code>dim_section</code></span></li>
+        <li class=""><span class="no">#12–#14</span><span><code>fact_student_enrollment</code></span></li>
+        <li class=""><span class="no">#15</span><span><code>fact_student_section_enrollment</code></span></li>
+        <li class=""><span class="no">#16</span><span><code>fact_discipline_incident</code></span></li>
+        <li class=""><span class="no">#17</span><span><code>fact_discipline_incident_behavior</code></span></li>
+        <li class=""><span class="no">#18</span><span><code>fact_discipline_action</code></span></li>
+        <li class=""><span class="no">#19</span><span><code>fact_student_school_attendance</code></span></li>
+        <li class=""><span class="no">#20</span><span><code>fact_student_parent</code></span></li>
+        <li class=""><span class="no">#21</span><span><code>fact_staff_section</code></span></li>
+        <li class=""><span class="no">#22</span><span><code>fact_student_program</code></span></li>
+        <li class=""><span class="no">#23–#32</span><span><code>dim_student</code> <small>updates 7–16</small></span></li>
+        <li class=""><span class="no">#33</span><span><code>fact_student_academic_record</code></span></li>
+        <li class="chg"><span class="no">#34</span><span><code>fact_grade</code></span></li>
+        <li class="chg"><span class="no">#35</span><span><code>dim_grade_type</code></span></li>
+        <li class="stg"><span class="no">#36</span><span><code>stg_edfi_assessment_base</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#37</span><span><code>stg_edfi_assessment_scores</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#38</span><span><code>stg_migdl_parent_assessments</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#39</span><span><code>fact_student_assessment</code></span></li>
+        <li class="stg"><span class="no">#40</span><span><code>stg_migdl_objective_assessments</code> <small>staging</small></span></li>
+        <li class="gone"><span class="no">#41</span><span><code>stg_acadience_objective_component_map</code> <small>removed</small></span></li>
+        <li class="gone"><span class="no">#42</span><span><code>stg_nwea_grade_objective_map</code> <small>removed</small></span></li>
+        <li class="gone"><span class="no">#43</span><span><code>stg_miread_component_patterns</code> <small>removed</small></span></li>
+        <li class="gone"><span class="no">#44</span><span><code>stg_star_objective_component_map</code> <small>removed</small></span></li>
+        <li class="gone"><span class="no">#45</span><span><code>stg_nwea_performance_level_lookup</code> <small>removed</small></span></li>
+        <li class="gone"><span class="no">#46</span><span><code>stg_miread_component_key</code> <small>removed</small></span></li>
+        <li class="gone"><span class="no">#47</span><span><code>stg_miread_foa_join</code> <small>removed</small></span></li>
+        <li class=""><span class="no">#48</span><span><code>fact_student_objective_assessment</code></span></li>
+        <li class=""><span class="no">#49</span><span><code>fact_student_section_grade</code></span></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Proposed load order</h5>
+        <ul class="lo">
+        <li class=""><span class="no">#0</span><span><code>dim_date</code></span></li>
+        <li class=""><span class="no">#1</span><span><code>dim_school_year</code></span></li>
+        <li class=""><span class="no">#2</span><span><code>dim_education_organization</code></span></li>
+        <li class=""><span class="no">#3</span><span><code>dim_student</code> <small>pass 1</small></span></li>
+        <li class="grn"><span class="no">#4</span><span><code>dim_staff</code></span></li>
+        <li class="grn"><span class="no">#5</span><span><code>dim_parent</code></span></li>
+        <li class=""><span class="no">#6</span><span><code>dim_section</code></span></li>
+        <li class=""><span class="no">#7</span><span><code>fact_student_enrollment</code></span></li>
+        <li class=""><span class="no">#8</span><span><code>fact_student_section_enrollment</code></span></li>
+        <li class=""><span class="no">#9</span><span><code>fact_discipline_incident</code></span></li>
+        <li class=""><span class="no">#10</span><span><code>fact_discipline_incident_behavior</code></span></li>
+        <li class=""><span class="no">#11</span><span><code>fact_discipline_action</code></span></li>
+        <li class=""><span class="no">#12</span><span><code>fact_student_school_attendance</code></span></li>
+        <li class=""><span class="no">#13</span><span><code>fact_student_parent</code></span></li>
+        <li class=""><span class="no">#14</span><span><code>fact_staff_section</code></span></li>
+        <li class=""><span class="no">#15</span><span><code>fact_student_program</code></span></li>
+        <li class=""><span class="no">#16</span><span><code>dim_student</code> <small>pass 2: set flags w/ fact_student_program</small></span></li>
+        <li class=""><span class="no">#17</span><span><code>fact_student_academic_record</code></span></li>
+        <li class="chg"><span class="no">#18</span><span><code>dim_grade_type</code></span></li>
+        <li class="chg"><span class="no">#19</span><span><code>fact_grade</code></span></li>
+        <li class="stg"><span class="no">#20</span><span><code>stg_edfi_assessment_base</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#21</span><span><code>stg_edfi_assessment_scores</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#22</span><span><code>stg_migdl_parent_assessments</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#23</span><span><code>fact_student_assessment</code></span></li>
+        <li class="stg"><span class="no">#24</span><span><code>stg_migdl_objective_assessments</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#25</span><span><code>fact_student_objective_assessment</code></span></li>
+        <li class=""><span class="no">#26</span><span><code>fact_student_section_grade</code></span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="tcap">Existing numbers are step positions in <code>gold_derived.yaml</code>, one per statement, counted from 0. Proposed numbers count one per entity, also from 0, so <code>dim_student</code> has two numbers while it loads in two parts, and the staging steps stay as their own entries.</p>
+
+    <p>Open items:</p>
+    <ul class="slist">
+      <li><b><code>dim_student</code> and <code>fact_student_program</code>:</b> should we simplify this dependency?
+        <ul class="slist">
+          <li><b>Can <code>dim_student</code> load in one pass?</b> If it derives its program flags straight from the conf program tables instead of from <code>fact_student_program</code>, which reads the derived <code>fact_student_enrollment</code> and <code>dim_student</code>.</li>
+          <li><b>Do we still need <code>fact_student_program</code>?</b> Once <code>dim_student</code> stops reading it, it has no readers. If we keep it, it needs a refresh mechanism and its key consistency fixes. If we retire it, that work goes away and the load order loses a step. Open: whether there are any current consumers outside the lake and API or future consumers.</li>
+        </ul>
+      </li>
+          <li><b>Permanent staging tables:</b> should we keep these permanent where they are used across layers? <code>stg_edfi_assessment_base</code>, <code>stg_edfi_assessment_scores</code>, <code>stg_migdl_parent_assessments</code> and <code>stg_migdl_objective_assessments</code> (steps #36 to #38 and #40) could be permanent tables instead of temp tables, so platinum can reuse them instead of building them again. Open: where they would live, how they are refreshed for each district and year (they are rebuilt in full today), and whether platinum can always run after the derived load for the same district and year.</li>
+    </ul>
 
     <h3 class="hsub">3. Gold Main Extract <span class="ptag">Properties 4, 6, 11</span></h3>
     <div class="wipnote" role="note"><span class="wipico" aria-hidden="true">&#9888;</span><div><b>This section is in progress!</b> Content is hidden for now.</div></div>
-    <!-- Hidden. To show, remove the hidden attribute from this div and remove the in-progress note above. -->
+    <!-- Hidden. To show, remove the hidden attribute to this div and comment-out the in-progress note above. -->
     <div hidden>
     <p>A dirty-key refresh needs to know which keys changed in gold main since derived last ran. Gold main records this on every conf row: <code>ingestionbatchid</code>, <code>currentflag</code> and <code>recordflag</code> (<code>IU</code> or <code>D</code>). A delete leaves a tombstone row. This assumes G3 and G4. MERGE and key-slice-replace both use this extract. Recompute does not need it.</p>
     <ol class="slist">
@@ -581,8 +709,14 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <div id="v-extract"></div>
     <p class="tcap">Batches 5 and 6 have not been refreshed yet. A and C have current rows in them, so they are changed. B has a tombstone and no current row, so it is deleted. D last changed in batch 3, which derived already refreshed, so it is skipped.</p>
     <p><b>What each strategy does with the dirty keys.</b> MERGE upserts the keys that still have rows and deletes the dirty keys that have none, in one transaction. Key-slice-replace deletes the key's rows and inserts the recomputed ones, so a deleted key just inserts nothing.</p>
-    <p><b>Tracking the batches.</b> The ingestion tracker already records <code>GOLD MAIN LOAD COMPLETED</code> for each batch, and gold main uses it to find the batches it has not processed. It does not record whether derived has consumed a batch. Derived runs after gold main, so if derived fails, the next run would see those batches as done and lose its window. Derived needs its own per-batch status, written only after the run succeeds. A set of unprocessed batches also survives a failed run in the middle, which a single watermark would not. Open: the status name, and whether two jobs can safely write the tracker file.</p>
+    <p><b>Tracking the batches.</b> The ingestion tracker already records <code>GOLD MAIN LOAD COMPLETED</code> for each batch, and gold main uses it to find the batches it has not processed. It does not record whether derived has consumed a batch. Derived runs after gold main, so if derived fails, the next run would see those batches as done and lose its window. Derived needs its own per-batch status, written only after the run succeeds. A set of unprocessed batches also survives a failed run in the middle, which a single watermark would not.</p>
     <p>A change to a child row re-versions its parent in silver, so the key is dirty even when derived never reads that child column (property 3). For TYPE1 and INCREMENTAL tables, an unchanged re-send still advances the batch id, so some keys look dirty without a real change. That costs compute, not correctness. Refreshing only dirty keys, instead of scanning the whole district and year, addresses property 11.</p>
+    <p>Open items:</p>
+    <ul class="slist">
+      <li><b>Derived batch status:</b> whether derived records its progress as a new per-batch status in the ingestion tracker or as a separate watermark, and what to call it.</li>
+      <li><b>Tracker writes:</b> whether two jobs can safely write the tracker file, which is a CSV in S3.</li>
+      <li><b>Tombstone ordering:</b> step 3 relies on gold main never leaving a current row that is older than a tombstone for the same key. We have not checked that against the data.</li>
+    </ul>
     </div>
 
     <h3 class="hsub">4. Refresh Strategy <span class="ptag">Properties 1, 7</span></h3>
@@ -594,10 +728,15 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     </tbody></table></div>
     <ul class="slist">
       <li><b>Choosing:</b> MERGE fits when a key's derived rows are fixed. Key-slice-replace fits when they can appear or disappear. Recompute is the fallback where a partial refresh is impractical.</li>
-      <li><b>Default:</b> gold main chose one expire-and-insert template for every entity, over MERGE for the entities where MERGE could apply, to keep one pattern to build and validate. The same reasoning could favour key-slice-replace as the default for derived, with MERGE as an optimization. This is open.</li>
+      <li><b>Default:</b> gold main chose one expire-and-insert template for every entity, over MERGE for the entities where MERGE could apply, to keep one pattern to build and validate. The same reasoning could favour key-slice-replace as the default for derived, with MERGE as an optimization.</li>
       <li><b>Atomic:</b> each refresh, delete and insert together, runs in one transaction, so a failure cannot leave a table partly written. It reuses the orchestrator transaction support that gold main also needs.</li>
       <li><b>Rebuild:</b> Recompute is also the rebuild path. A derived-only rebuild of derived and platinum from intact gold main is routine and history-safe, and a rebuild of gold main itself must be followed by one.</li>
       <li><b>Retire,</b> removing a table or moving its logic into existing ETL, is a per-table decision, not a refresh strategy.</li>
+    </ul>
+
+    <p>Open items:</p>
+    <ul class="slist">
+      <li><b>Default mechanism:</b> whether derived uses one template for every table (key-slice-replace, with MERGE as an optimization) or a small set chosen per table.</li>
     </ul>
     <!-- Hidden for now. To restore, remove the hidden attribute from this div. -->
     <div hidden>
@@ -624,7 +763,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     </div>
     
 
-    <h3 class="hsub">6. Open Items</h3>
+    <h3 class="hsub">6. Further Analysis</h3>
     <ul class="slist">
       <li><b>Child fan-out:</b> child attributes are still picked arbitrarily, and a child-only change may or may not reach the derived row, until we decide how child grain is represented (properties 2 and 3).</li>
       <li><b>Platinum:</b> not covered. It reads gold derived and gold main, so it needs the same dirty-key step carried one hop further. A derived-only rebuild already includes platinum. Per-table platinum strategies are open.</li>
@@ -2074,10 +2213,11 @@ function buildDag(host,D){
   svg.setAttribute("class","wires");cols.appendChild(svg);
   D.nodes.forEach(function(n){(byL[n.level]=byL[n.level]||[]).push(n);if(n.level>maxL)maxL=n.level;});
   for(var L=0;L<=maxL;L++){
-    var c=el("div","dagcol");c.appendChild(el("div","grp","layer "+L));
+    var c=el("div","dagcol"),sepDone=false;c.appendChild(el("div","grp","layer "+L));
     (byL[L]||[]).forEach(function(n){
-      var b=el("div","box"+(n.flag?" flag":"")+(n.flag2?" flag2":"")+(n.split?" split":""),esc(n.label||n.id).replace(/_/g,"_<wbr>")+"<small>"+(n.note?esc(n.note)+" · ":"")+"today "+esc(n.posLabel||("#"+n.pos))+"</small>");
-      b.dataset.id=n.id;b.tabIndex=0;boxes[n.id]=b;c.appendChild(b);
+      if(n.stg&&!sepDone){c.appendChild(el("div","stgsep"));sepDone=true;}
+      var b=el("div","box"+(n.stg?" stg":"")+(n.split?" split":""),esc(n.label||n.id).replace(/_/g,"_<wbr>")+"<small>"+(n.note?esc(n.note)+" · ":"")+"today "+esc(n.posLabel||("#"+n.pos))+"</small>");
+      b.dataset.id=n.id;b.tabIndex=0;boxes[n.id]=b;if(n.badge)b.appendChild(el("span","bdg "+n.badge.c));c.appendChild(b);
     });
     cols.appendChild(c);
   }
@@ -2686,7 +2826,7 @@ function buildEntity(E){
       [{g:"gold derived"},{id:"x1",t:"A's derived rows removed",s:"tables that read A are dirty too",c:"more"}]],
       edges:[["s1","g1","j"],["s1","g2","j"],["g2","d1","win"],["d1","f1","win"],["f1","x1","lose"]]});
     var h=document.getElementById("v-dag");
-    if(h)buildDag(h,{"nodes": [{"id": "dim_date", "level": 0, "pos": 0}, {"id": "dim_school_year", "level": 0, "pos": 1}, {"id": "dim_education_organization", "level": 0, "pos": 2, "posLabel": "#2–#3"}, {"id": "dim_student", "level": 1, "pos": 4, "label": "dim_student", "note": "insert, passes 2 to 6", "split": true, "posLabel": "#4–#9", "flag2": true}, {"id": "dim_staff", "level": 1, "pos": 10}, {"id": "dim_parent", "level": 0, "pos": 10, "note": "same step as dim_staff"}, {"id": "dim_section", "level": 0, "pos": 11}, {"id": "fact_student_enrollment", "level": 2, "pos": 12, "posLabel": "#12–#14"}, {"id": "fact_student_section_enrollment", "level": 2, "pos": 15}, {"id": "fact_discipline_incident", "level": 0, "pos": 16}, {"id": "fact_discipline_incident_behavior", "level": 2, "pos": 17}, {"id": "fact_discipline_action", "level": 2, "pos": 18}, {"id": "fact_student_school_attendance", "level": 3, "pos": 19}, {"id": "fact_student_parent", "level": 3, "pos": 20}, {"id": "fact_staff_section", "level": 2, "pos": 21}, {"id": "fact_student_program", "level": 3, "pos": 22, "flag2": true}, {"id": "dim_student_late", "level": 4, "pos": 23, "label": "dim_student", "note": "passes 7 to 16", "split": true, "posLabel": "#23–#32", "flag2": true}, {"id": "fact_student_academic_record", "level": 3, "pos": 33}, {"id": "fact_grade", "level": 3, "pos": 34, "flag": true}, {"id": "dim_grade_type", "level": 0, "pos": 35, "flag": true, "note": "moves before fact_grade"}, {"id": "fact_student_assessment", "level": 3, "pos": 39, "posLabel": "#36–#39", "note": "includes 3 staging steps"}, {"id": "fact_student_objective_assessment", "level": 4, "pos": 48, "posLabel": "#40 and #48"}, {"id": "fact_student_section_grade", "level": 4, "pos": 49}], "edges": [["dim_date", "fact_discipline_action"], ["dim_date", "fact_staff_section"], ["dim_date", "fact_student_assessment"], ["dim_date", "fact_student_objective_assessment"], ["dim_date", "fact_student_program"], ["dim_date", "fact_student_school_attendance"], ["dim_education_organization", "dim_staff"], ["dim_education_organization", "dim_student"], ["dim_education_organization", "fact_discipline_action"], ["dim_education_organization", "fact_discipline_incident_behavior"], ["dim_education_organization", "fact_grade"], ["dim_education_organization", "fact_staff_section"], ["dim_education_organization", "fact_student_academic_record"], ["dim_education_organization", "fact_student_assessment"], ["dim_education_organization", "fact_student_enrollment"], ["dim_education_organization", "fact_student_school_attendance"], ["dim_education_organization", "fact_student_section_enrollment"], ["dim_grade_type", "fact_grade"], ["dim_parent", "dim_staff"], ["dim_parent", "fact_student_parent"], ["dim_school_year", "fact_discipline_action"], ["dim_school_year", "fact_grade"], ["dim_school_year", "fact_staff_section"], ["dim_school_year", "fact_student_academic_record"], ["dim_school_year", "fact_student_assessment"], ["dim_school_year", "fact_student_enrollment"], ["dim_school_year", "fact_student_objective_assessment"], ["dim_school_year", "fact_student_program"], ["dim_school_year", "fact_student_school_attendance"], ["dim_school_year", "fact_student_section_enrollment"], ["dim_section", "fact_grade"], ["dim_section", "fact_staff_section"], ["dim_section", "fact_student_section_enrollment"], ["dim_section", "fact_student_section_grade"], ["dim_staff", "fact_staff_section"], ["dim_student", "dim_student_late"], ["dim_student", "fact_discipline_action"], ["dim_student", "fact_discipline_incident_behavior"], ["dim_student", "fact_grade"], ["dim_student", "fact_student_academic_record"], ["dim_student", "fact_student_assessment"], ["dim_student", "fact_student_enrollment"], ["dim_student", "fact_student_objective_assessment"], ["dim_student", "fact_student_parent"], ["dim_student", "fact_student_program"], ["dim_student", "fact_student_school_attendance"], ["dim_student", "fact_student_section_enrollment"], ["dim_student", "fact_student_section_grade"], ["fact_discipline_incident", "fact_discipline_action"], ["fact_grade", "fact_student_section_grade"], ["fact_student_assessment", "fact_student_objective_assessment"], ["fact_student_enrollment", "fact_grade"], ["fact_student_enrollment", "fact_student_academic_record"], ["fact_student_enrollment", "fact_student_assessment"], ["fact_student_enrollment", "fact_student_parent"], ["fact_student_enrollment", "fact_student_program"], ["fact_student_program", "dim_student_late"], ["fact_student_section_enrollment", "fact_student_school_attendance"]]});
+    if(h)buildDag(h,{"nodes": [{"id": "dim_date", "level": 0, "pos": 0}, {"id": "dim_school_year", "level": 0, "pos": 1}, {"id": "dim_education_organization", "level": 0, "pos": 2, "posLabel": "#2–#3"}, {"id": "dim_parent", "level": 0, "pos": 10, "note": "same step as dim_staff", "badge": {"t": "", "c": "g"}}, {"id": "dim_section", "level": 0, "pos": 11}, {"id": "fact_discipline_incident", "level": 0, "pos": 16}, {"id": "dim_grade_type", "level": 0, "pos": 35, "note": "currently loaded after fact_grade", "badge": {"t": "1", "c": "o"}}, {"id": "stg_edfi_assessment_base", "level": 0, "pos": 36, "stg": true, "note": "staging step", "badge": {"t": "2", "c": "s"}}, {"id": "dim_student", "level": 1, "pos": 4, "label": "dim_student", "note": "insert, updates 2–6", "split": true, "posLabel": "#4–#9", "badge": {"t": "2", "c": "t"}}, {"id": "dim_staff", "level": 1, "pos": 10, "badge": {"t": "", "c": "g"}}, {"id": "stg_edfi_assessment_scores", "level": 1, "pos": 37, "stg": true, "note": "staging step", "badge": {"t": "2", "c": "s"}}, {"id": "fact_student_enrollment", "level": 2, "pos": 12, "posLabel": "#12–#14"}, {"id": "fact_student_section_enrollment", "level": 2, "pos": 15}, {"id": "fact_discipline_incident_behavior", "level": 2, "pos": 17}, {"id": "fact_discipline_action", "level": 2, "pos": 18}, {"id": "fact_staff_section", "level": 2, "pos": 21}, {"id": "stg_migdl_parent_assessments", "level": 2, "pos": 38, "stg": true, "note": "staging step", "badge": {"t": "2", "c": "s"}}, {"id": "fact_student_school_attendance", "level": 3, "pos": 19}, {"id": "fact_student_parent", "level": 3, "pos": 20}, {"id": "fact_student_program", "level": 3, "pos": 22, "badge": {"t": "2", "c": "t"}}, {"id": "fact_student_academic_record", "level": 3, "pos": 33}, {"id": "fact_grade", "level": 3, "pos": 34, "badge": {"t": "1", "c": "o"}}, {"id": "fact_student_assessment", "level": 3, "pos": 39}, {"id": "stg_migdl_objective_assessments", "level": 3, "pos": 40, "stg": true, "note": "staging step", "badge": {"t": "2", "c": "s"}}, {"id": "dim_student_late", "level": 4, "pos": 23, "label": "dim_student", "note": "update passes 7–16", "split": true, "posLabel": "#23–#32", "badge": {"t": "2", "c": "t"}}, {"id": "fact_student_objective_assessment", "level": 4, "pos": 48}, {"id": "fact_student_section_grade", "level": 4, "pos": 49}], "edges": [["dim_date", "fact_discipline_action"], ["dim_date", "fact_staff_section"], ["dim_date", "fact_student_assessment"], ["dim_date", "fact_student_objective_assessment"], ["dim_date", "fact_student_program"], ["dim_date", "fact_student_school_attendance"], ["dim_education_organization", "dim_staff"], ["dim_education_organization", "dim_student"], ["dim_education_organization", "fact_discipline_action"], ["dim_education_organization", "fact_discipline_incident_behavior"], ["dim_education_organization", "fact_grade"], ["dim_education_organization", "fact_staff_section"], ["dim_education_organization", "fact_student_academic_record"], ["dim_education_organization", "fact_student_assessment"], ["dim_education_organization", "fact_student_enrollment"], ["dim_education_organization", "fact_student_school_attendance"], ["dim_education_organization", "fact_student_section_enrollment"], ["dim_grade_type", "fact_grade"], ["dim_parent", "fact_student_parent"], ["dim_school_year", "fact_discipline_action"], ["dim_school_year", "fact_grade"], ["dim_school_year", "fact_staff_section"], ["dim_school_year", "fact_student_academic_record"], ["dim_school_year", "fact_student_assessment"], ["dim_school_year", "fact_student_enrollment"], ["dim_school_year", "fact_student_objective_assessment"], ["dim_school_year", "fact_student_program"], ["dim_school_year", "fact_student_school_attendance"], ["dim_school_year", "fact_student_section_enrollment"], ["dim_section", "fact_grade"], ["dim_section", "fact_staff_section"], ["dim_section", "fact_student_section_enrollment"], ["dim_section", "fact_student_section_grade"], ["dim_staff", "fact_staff_section"], ["dim_student", "dim_student_late"], ["dim_student", "fact_discipline_action"], ["dim_student", "fact_discipline_incident_behavior"], ["dim_student", "fact_grade"], ["dim_student", "fact_student_academic_record"], ["dim_student", "fact_student_assessment"], ["dim_student", "fact_student_enrollment"], ["dim_student", "fact_student_objective_assessment"], ["dim_student", "fact_student_parent"], ["dim_student", "fact_student_program"], ["dim_student", "fact_student_school_attendance"], ["dim_student", "fact_student_section_enrollment"], ["dim_student", "fact_student_section_grade"], ["fact_discipline_incident", "fact_discipline_action"], ["fact_grade", "fact_student_section_grade"], ["fact_student_assessment", "fact_student_objective_assessment"], ["fact_student_enrollment", "fact_grade"], ["fact_student_enrollment", "fact_student_academic_record"], ["fact_student_enrollment", "fact_student_assessment"], ["fact_student_enrollment", "fact_student_parent"], ["fact_student_enrollment", "fact_student_program"], ["fact_student_program", "dim_student_late"], ["fact_student_section_enrollment", "fact_student_school_attendance"], ["stg_edfi_assessment_base", "stg_edfi_assessment_scores"], ["stg_edfi_assessment_scores", "stg_migdl_objective_assessments"], ["stg_edfi_assessment_scores", "stg_migdl_parent_assessments"], ["stg_migdl_objective_assessments", "fact_student_objective_assessment"], ["stg_migdl_parent_assessments", "fact_student_assessment"], ["stg_migdl_parent_assessments", "stg_migdl_objective_assessments"]]});
   })();
 
   /* mechanism visuals */
