@@ -17,7 +17,7 @@
   --rule:#DBE2EB;--rule-2:#C3CEDB;
   --accent:#2F5FA8;--accent-ink:#24497F;--accent-wash:#E5EDF8;
   --bad:#B4231F;--bad-wash:#FBEAE8;--warn:#B45309;--warn-wash:#FDF1E1;--ok:#15803D;--ok-wash:#E4F5EA;
-  --l-silver:#8B97A3;--l-stage:#5B87C4;--l-conf:#D9A400;--l-derived:#B98A00;--l-plat:#8267A8;--l-api:#1F7A6B;--l-temp:#5B87C4;
+  --l-silver:#8B97A3;--l-stage:#5B87C4;--l-conf:#D9A400;--l-derived:#B98A00;--l-plat:#8267A8;--l-api:#1F7A6B;--l-temp:#5B87C4;--hl-teal:#0E8C8C;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 }
@@ -27,14 +27,14 @@
   --rule:#22303B;--rule-2:#2F404E;
   --accent:#7BA7E8;--accent-ink:#A5C4F2;--accent-wash:#152740;
   --bad:#F87171;--bad-wash:#2A1719;--warn:#F0A93B;--warn-wash:#2B2113;--ok:#4ADE80;--ok-wash:#112619;
-  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;}}
+  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;--hl-teal:#4CC9C9;}}
 :root[data-theme="dark"]{
   --ground:#0C1218;--surface:#141D26;--surface-2:#1A252F;--sunk:#0F1922;
   --ink:#E3EBF3;--ink-2:#BECDDA;--muted:#8496A7;--faint:#647689;
   --rule:#22303B;--rule-2:#2F404E;
   --accent:#7BA7E8;--accent-ink:#A5C4F2;--accent-wash:#152740;
   --bad:#F87171;--bad-wash:#2A1719;--warn:#F0A93B;--warn-wash:#2B2113;--ok:#4ADE80;--ok-wash:#112619;
-  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;}
+  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;--hl-teal:#4CC9C9;}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:70px}
 body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;margin:0;-webkit-font-smoothing:antialiased}
@@ -282,6 +282,12 @@ a.kwl:hover{text-decoration:underline}
 .dag .dagcol{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
 .dag .box.flag{border-color:var(--warn);background:var(--warn-wash);border-left:4px solid var(--warn);color:var(--ink)}
 .dag .box.split{border-style:dashed}
+ol.slist.flags{list-style:none;counter-reset:fl;padding-left:32px}
+ol.slist.flags>li{counter-increment:fl;position:relative}
+ol.slist.flags>li::before{content:counter(fl);position:absolute;left:-32px;top:1px;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 11px/1 var(--mono);color:var(--ground)}
+ol.slist.flags>li.o::before{background:var(--warn)}
+ol.slist.flags>li.t::before{background:var(--hl-teal)}
+.dag .box.flag2{border-style:solid;border-color:var(--hl-teal);background:color-mix(in srgb,var(--hl-teal) 14%,var(--surface));border-left:4px solid var(--hl-teal);color:var(--ink)}
 .dag .box{overflow-wrap:normal}
 .tcap{font-size:13px;color:var(--muted);margin:8px 0 0}
 .tr{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--rule-2);background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
@@ -547,25 +553,39 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     </tbody></table></div>
     <p class="tcap"><b>Note for Platinum Layer Analysis:</b> <code>component_key</code> is volatile and used as a foreign key in <code>platinum.dim_miread_literacy_component</code>. It hashes the current time, so it changes on every run.</p>
 
-    <h3 class="hsub">2. Gold Main Extract <span class="ptag">Properties 4, 6, 11</span></h3>
+    <h3 class="hsub">2. Order and Dependencies <span class="ptag">Property 5</span></h3>
+    <p>The next step to a gold derived delta correctness solution is to understand the table-to-table dependencies that exist within the layer. 15 of the 22 derived tables read another derived table, so a table must refresh after the tables it reads, and its dirty keys must come from them.</p>
+    <p>The graph below shows the read dependencies between gold derived tables today, taken from the SQL. Each table shows its sequence number(s) in the load order today (&ldquo;#N&rdquo;, or a range when a table has several steps). Hover a table to trace what it reads and what reads it.</p>
+    <div id="v-dag"></div>
+    <p class="tcap">Each column is one layer of a topological sort. Tables in a layer can load in any order, and every layer follows the one before it. Where a table has several steps, the range shows all of them. #41 to #47 are platinum staging steps that run inside this step, so they have no node.</p>
+    <p>Load order is that topological sort. Today's order is already valid except in two places:</p>
+    <ol class="slist flags">
+      <li class="o"><b><code>fact_grade</code></b> reads <code>dim_grade_type</code> but loads one position before it. <code>dim_grade_type</code> reads no other derived table, so it can move ahead of <code>fact_grade</code>. Both are highlighted in orange in the graph.</li>
+      <li class="t"><b><code>dim_student</code> and <code>fact_student_program</code></b> read each other, which looks like a cycle between tables. It is not a cycle between statements: <code>dim_student</code>'s insert and flag passes 2 to 6 read no derived table, and its passes 7 to 16 read <code>fact_student_program</code>. Splitting <code>dim_student</code> into those two nodes, as in the graph, removes the cycle. Both <code>dim_student</code> nodes and <code>fact_student_program</code> are highlighted in teal in the graph.</li>
+    </ol>
+    <p>Dirty keys follow the same edges: a changed key in a table dirties the keys that read it. <code>dim_student</code>, <code>dim_education_organization</code> and <code>dim_school_year</code> have the most readers (12, 11 and 10, respectively), so a change to them reaches the most tables.</p>
+
+    <h3 class="hsub">3. Gold Main Extract <span class="ptag">Properties 4, 6, 11</span></h3>
     <div class="wipnote" role="note"><span class="wipico" aria-hidden="true">&#9888;</span><div><b>This section is in progress!</b> Content is hidden for now.</div></div>
-    <!-- Hidden for now. To restore, remove the hidden attribute from this div and delete the in-progress note above. -->
+    <!-- Hidden. To show, remove the hidden attribute from this div and remove the in-progress note above. -->
     <div hidden>
-    <p>Gold derived reads what gold main records about each change. Every conf table carries <code>recordflag</code> (<code>IU</code> or <code>D</code>), <code>ingestionbatchid</code> and <code>currentflag</code>, and a delete leaves one tombstone row per delete event. Finding the dirty keys for a table:</p>
+    <p>A dirty-key refresh needs to know which keys changed in gold main since derived last ran. Gold main records this on every conf row: <code>ingestionbatchid</code>, <code>currentflag</code> and <code>recordflag</code> (<code>IU</code> or <code>D</code>). A delete leaves a tombstone row. This assumes G3 and G4. MERGE and key-slice-replace both use this extract. Recompute does not need it.</p>
     <ol class="slist">
-      <li>Keep a <b>watermark</b> per district: the latest gold main batch already refreshed into derived.</li>
-      <li>For every source the table reads, take the conf keys with rows in batches after the watermark. Fanned-out rows share a key and a batch id, so a parent counts once.</li>
-      <li>A key with a current row is <b>changed</b>. A key with a tombstone and no current row is <b>deleted</b>. A key that was deleted and re-created counts as changed, because the current row wins.</li>
-      <li>For a joined table, map its changed keys back through the join to this table's keys. A change in a table that many tables read dirties all of them.</li>
-      <li>Recompute from <b>current rows only</b> (<code>currentflag = TRUE</code>), so tombstones and expired versions never reach derived. 13 of the 22 derived tables comment this filter out today.</li>
+      <li><b>Fix the batch list.</b> At the start of a run, take the gold main batches for the district and year that derived has not refreshed yet. Use the same list for every table in the run, so all tables see one consistent window.</li>
+      <li><b>Find the changed keys in each source.</b> For every gold main table a derived table reads, take the keys that have a current row (<code>currentflag = TRUE</code>) with a batch id in the list. Gold main keeps several rows per record when children fan out, and they share one key and one batch id, so a record counts once.</li>
+      <li><b>Find the deleted keys.</b> Take the keys that have a tombstone (<code>recordflag = 'D'</code>) in the list and no current row. A key can have more than one tombstone over time, so take the distinct keys. You do not need the latest one. If a key has a current row, it is changed, because gold main only leaves a current row when it is newer than the tombstone.</li>
+      <li><b>Map them to derived keys.</b> Each source's keys map to this table's keys through its join. A change in a table that many rows read, such as a school name, dirties all of them. Dirty keys from an upstream derived table are added once that table has refreshed, so they follow the load order.</li>
+      <li><b>Recompute from current rows.</b> For every dirty key, read all of its current rows, not only the rows in the batch list. 13 of the 22 derived tables comment out the <code>currentflag = TRUE</code> filter today, so tombstones and expired versions can reach derived.</li>
+      <li><b>Mark the batches.</b> After the whole run succeeds, record that the batches have been refreshed into derived.</li>
     </ol>
     <div id="v-extract"></div>
-    <p class="tcap">Only rows after the watermark count. B has a tombstone and no current row, so it is deleted.</p>
-    <p>A change to a child row re-versions its parent in silver, so the key is dirty even when derived never reads that child column (property 3). Unchanged re-sends do not reach staging, because silver treats them as no-ops, so they should not create dirty keys. Refreshing only dirty keys, instead of scanning the whole district and year, addresses property 11.</p>
+    <p class="tcap">Batches 5 and 6 have not been refreshed yet. A and C have current rows in them, so they are changed. B has a tombstone and no current row, so it is deleted. D last changed in batch 3, which derived already refreshed, so it is skipped.</p>
+    <p><b>What each strategy does with the dirty keys.</b> MERGE upserts the keys that still have rows and deletes the dirty keys that have none, in one transaction. Key-slice-replace deletes the key's rows and inserts the recomputed ones, so a deleted key just inserts nothing.</p>
+    <p><b>Tracking the batches.</b> The ingestion tracker already records <code>GOLD MAIN LOAD COMPLETED</code> for each batch, and gold main uses it to find the batches it has not processed. It does not record whether derived has consumed a batch. Derived runs after gold main, so if derived fails, the next run would see those batches as done and lose its window. Derived needs its own per-batch status, written only after the run succeeds. A set of unprocessed batches also survives a failed run in the middle, which a single watermark would not. Open: the status name, and whether two jobs can safely write the tracker file.</p>
+    <p>A change to a child row re-versions its parent in silver, so the key is dirty even when derived never reads that child column (property 3). For TYPE1 and INCREMENTAL tables, an unchanged re-send still advances the batch id, so some keys look dirty without a real change. That costs compute, not correctness. Refreshing only dirty keys, instead of scanning the whole district and year, addresses property 11.</p>
     </div>
-    
 
-    <h3 class="hsub">3. Refresh Strategy <span class="ptag">Properties 1, 7</span></h3>
+    <h3 class="hsub">4. Refresh Strategy <span class="ptag">Properties 1, 7</span></h3>
     <p>A refresh strategy is how one derived table is brought up to date for its dirty keys. It is defined per table, from the table's derived grain and from how a dirty key maps to its derived keys. The Solution by Table section below records the candidate for each table.</p>
     <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:13%"><col style="width:22%"><col style="width:19%"><col style="width:25%"><col style="width:21%"></colgroup><thead><tr><th>Strategy</th><th>Fits</th><th>On update</th><th>On delete</th><th>Cost</th></tr></thead><tbody>
       <tr><td><b>Recompute</b></td><td>Any grain.</td><td>The whole district-year slice is deleted and rebuilt.</td><td>The rebuilt slice no longer contains the key.</td><td>Every row is rewritten, changed or not. Deleted rows stay until VACUUM.</td></tr>
@@ -587,7 +607,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <p class="tcap">Green wires mark rows that are written, red dashed wires mark rows that are deleted, and blue wires mark rows that are left alone. The amber box marks a row that is now out of date.</p>
     </div>
 
-    <h3 class="hsub">4. Delete Handling <span class="ptag">Properties 1, 6</span></h3>
+    <h3 class="hsub">5. Delete Handling <span class="ptag">Properties 1, 6</span></h3>
     <div class="wipnote" role="note"><span class="wipico" aria-hidden="true">&#9888;</span><div><b>This section is in progress!</b> Content is hidden for now.</div></div>
     <!-- Hidden for now. To restore, remove the hidden attribute from this div and delete the in-progress note above. -->
     <div hidden>
@@ -596,24 +616,13 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <ol class="slist">
       <li>Silver records the delete as a tombstone with the natural keys and the delete's batch id.</li>
       <li>Gold main widens its extract to include the tombstone. It then expires the key's rows (SCD2: <code>currentflag</code> false and <code>effectiveto</code> set) or hard-deletes them (TYPE1 and INCREMENTAL), and inserts one tombstone row with <code>recordflag = D</code>.</li>
-      <li>The extract in section 2 finds a key after the watermark with a tombstone and no current row, so the key is deleted.</li>
+      <li>The extract in section 3 finds a key after the watermark with a tombstone and no current row, so the key is deleted.</li>
       <li>The refresh recomputes from current rows only and finds none, so the key's derived rows are removed. Recompute and key-slice-replace do this by construction. MERGE needs its explicit delete branch.</li>
-      <li>Tables that read this table treat the key as dirty, so the delete cascades along the dependency graph in section 5.</li>
+      <li>Tables that read this table treat the key as dirty, so the delete cascades along the dependency graph in section 2.</li>
     </ol>
-    <p>A delete only reaches derived if reads exclude tombstones, which is why the current-row filter in section 2 is a prerequisite. A key that is deleted and then re-created ends current, because the current row wins over the earlier tombstone.</p>
+    <p>A delete only reaches derived if reads exclude tombstones, which is why the current-row filter in section 3 is a prerequisite. A key that is deleted and then re-created ends current, because the current row wins over the earlier tombstone.</p>
     </div>
     
-
-    <h3 class="hsub">5. Order and Dependencies <span class="ptag">Property 5</span></h3>
-    <p>15 of the 22 derived tables read another derived table, so a table must refresh after the tables it reads, and its dirty keys come from them. The graph shows each table's reads, taken from the SQL. Hover a table to trace what it reads and what reads it.</p>
-    <div id="v-dag"></div>
-    <p class="tcap">Each column is one layer of a topological sort. Tables in a layer can load in any order, and every layer follows the one before it. The small number is the table's position in today's run.</p>
-    <p>Load order is that topological sort. Today's order is already valid except in two places:</p>
-    <ul class="slist">
-      <li><b><code>fact_grade</code></b> reads <code>dim_grade_type</code> but loads one position before it. <code>dim_grade_type</code> reads no other derived table, so it can move ahead of <code>fact_grade</code>.</li>
-      <li><b><code>dim_student</code> and <code>fact_student_program</code></b> read each other, which looks like a cycle between tables. It is not a cycle between statements: <code>dim_student</code>'s insert and flag passes 2 to 6 read no derived table, and its passes 7 to 16 read <code>fact_student_program</code>. Splitting <code>dim_student</code> into those two nodes, as in the graph, removes the cycle.</li>
-    </ul>
-    <p>Dirty keys follow the same edges: a changed key in a table dirties the keys that read it. <code>dim_student</code>, <code>dim_education_organization</code> and <code>dim_school_year</code> have the most readers (12, 11 and 10), so a change to them reaches the most tables.</p>
 
     <h3 class="hsub">6. Open Items</h3>
     <ul class="slist">
@@ -1142,7 +1151,7 @@ ENTITIES.push({
     ],
     current:{
       title:"Current State: append-only derived build",
-      summary:"Gold derived tables load with INSERT … LEFT JOIN target ON <natural key> WHERE target.<key> IS NULL. A row is inserted the first time its key appears and is never touched again (G5 inventory).",
+      summary:"Gold derived tables load with INSERT … LEFT JOIN target ON <natural key> WHERE target.<key> IS NULL. A row is inserted the first time its key appears and is never touched again.",
       points:[
         "An update upstream is ignored: the key already exists in the target, so the join drops the row.",
         "A delete upstream is never applied: the derived row stays current.",
@@ -1175,7 +1184,7 @@ ENTITIES.push({
       },
       {
             "q": "Is key-slice-replace the right strategy?",
-            "d": "Recompute and diff (not in the G5 inventory) needs no change signal but reads the full slice each run. Deciding needs the staff row counts and the run time of the current step."
+            "d": "Recompute and diff needs no change signal but reads the full slice each run. Deciding needs the staff row counts and the run time of the current step."
       },
       {
             "q": "How do we clean up the stale rows already in gold.dim_staff?",
@@ -1822,7 +1831,7 @@ var NOTES=[
     "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_academic_record.sql"
    ]
   ],
-  "why": "Aggregation, which G5 classifies separately from the MERGE tables. Several conf rows collapse into one output row with MAX(), so a dirty conf key requires re-running the GROUP BY or pivot for just that key and then merging the one resulting row. The row only disappears when every underlying conf row for the key is gone, and the dirty-key window may need more than one source table."
+  "why": "Aggregation. Several conf rows collapse into one output row with MAX(), so a dirty conf key requires re-running the GROUP BY or pivot for just that key and then merging the one resulting row. The row only disappears when every underlying conf row for the key is gone, and the dirty-key window may need more than one source table."
  },
  {
   "table": "fact_student_assessment",
@@ -1897,7 +1906,7 @@ var NOTES=[
     "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_student_objective_assessment.sql"
    ]
   ],
-  "why": "Recompute. The primary source is a temp table (`stg_migdl_objective_assessments`), and the table depends on `fact_student_assessment`, which is itself classed as Recompute. The G5 inventory does not give a separate reason for this table."
+  "why": "Recompute. The primary source is a temp table (`stg_migdl_objective_assessments`), and the table depends on `fact_student_assessment`, which is itself classed as Recompute."
  },
  {
   "table": "fact_student_parent",
@@ -2067,7 +2076,7 @@ function buildDag(host,D){
   for(var L=0;L<=maxL;L++){
     var c=el("div","dagcol");c.appendChild(el("div","grp","layer "+L));
     (byL[L]||[]).forEach(function(n){
-      var b=el("div","box"+(n.flag?" flag":"")+(n.split?" split":""),esc(n.label||n.id).replace(/_/g,"_<wbr>")+"<small>"+(n.note?esc(n.note)+" · ":"")+"today #"+n.pos+"</small>");
+      var b=el("div","box"+(n.flag?" flag":"")+(n.flag2?" flag2":"")+(n.split?" split":""),esc(n.label||n.id).replace(/_/g,"_<wbr>")+"<small>"+(n.note?esc(n.note)+" · ":"")+"today "+esc(n.posLabel||("#"+n.pos))+"</small>");
       b.dataset.id=n.id;b.tabIndex=0;boxes[n.id]=b;c.appendChild(b);
     });
     cols.appendChild(c);
@@ -2666,8 +2675,8 @@ function buildEntity(E){
   (function(){
     function mini(id,cls,spec){var h=document.getElementById(id);if(!h)return;var m=el("div","mv"+(cls?" "+cls:""));h.appendChild(m);buildMini(m,spec);}
     mini("v-extract","",{cols:[
-      [{g:"gold main conf rows"},{id:"r1",t:"A",s:"IU · batch 5",c:"cnf"},{id:"r2",t:"B",s:"D · batch 6 · no current row",c:"cnf"},{id:"r3",t:"C",s:"IU · batch 6",c:"cnf"},{id:"r4",t:"D",s:"IU · batch 3 · before the watermark",c:"cnf",m:true}],
-      [{g:"dirty keys · watermark is batch 4"},{id:"k1",t:"A",s:"changed",c:"p"},{id:"k2",t:"B",s:"deleted",c:"more"},{id:"k3",t:"C",s:"changed",c:"p"}]],
+      [{g:"gold main conf rows"},{id:"r1",t:"A",s:"IU · batch 5",c:"cnf"},{id:"r2",t:"B",s:"D · batch 6 · no current row",c:"cnf"},{id:"r3",t:"C",s:"IU · batch 6",c:"cnf"},{id:"r4",t:"D",s:"IU · batch 3 · already refreshed",c:"cnf",m:true}],
+      [{g:"dirty keys · batches 5 and 6 not yet refreshed"},{id:"k1",t:"A",s:"changed",c:"p"},{id:"k2",t:"B",s:"deleted",c:"more"},{id:"k3",t:"C",s:"changed",c:"p"}]],
       edges:[["r1","k1","win"],["r2","k2","lose"],["r3","k3","win"]]});
     mini("v-delete","ovw",{cols:[
       [{g:"silver"},{id:"s1",t:"Delete of key A",s:"tombstone with the natural keys and the delete batch id"}],
@@ -2677,7 +2686,7 @@ function buildEntity(E){
       [{g:"gold derived"},{id:"x1",t:"A's derived rows removed",s:"tables that read A are dirty too",c:"more"}]],
       edges:[["s1","g1","j"],["s1","g2","j"],["g2","d1","win"],["d1","f1","win"],["f1","x1","lose"]]});
     var h=document.getElementById("v-dag");
-    if(h)buildDag(h,{"nodes": [{"id": "dim_date", "level": 0, "pos": 0}, {"id": "dim_school_year", "level": 0, "pos": 1}, {"id": "dim_education_organization", "level": 0, "pos": 2}, {"id": "dim_student", "level": 1, "pos": 4, "label": "dim_student", "note": "insert, passes 2 to 6", "split": true}, {"id": "dim_staff", "level": 1, "pos": 10}, {"id": "dim_parent", "level": 0, "pos": 10}, {"id": "dim_section", "level": 0, "pos": 11}, {"id": "fact_student_enrollment", "level": 2, "pos": 12}, {"id": "fact_student_section_enrollment", "level": 2, "pos": 15}, {"id": "fact_discipline_incident", "level": 0, "pos": 16}, {"id": "fact_discipline_incident_behavior", "level": 2, "pos": 17}, {"id": "fact_discipline_action", "level": 2, "pos": 18}, {"id": "fact_student_school_attendance", "level": 3, "pos": 19}, {"id": "fact_student_parent", "level": 3, "pos": 20}, {"id": "fact_staff_section", "level": 2, "pos": 21}, {"id": "fact_student_program", "level": 3, "pos": 22}, {"id": "dim_student_late", "level": 4, "pos": 23, "label": "dim_student", "note": "passes 7 to 16", "split": true}, {"id": "fact_student_academic_record", "level": 3, "pos": 33}, {"id": "fact_grade", "level": 3, "pos": 34, "flag": true}, {"id": "dim_grade_type", "level": 0, "pos": 35, "flag": true, "note": "moves before fact_grade"}, {"id": "fact_student_assessment", "level": 3, "pos": 39}, {"id": "fact_student_objective_assessment", "level": 4, "pos": 48}, {"id": "fact_student_section_grade", "level": 4, "pos": 49}], "edges": [["dim_date", "fact_discipline_action"], ["dim_date", "fact_staff_section"], ["dim_date", "fact_student_assessment"], ["dim_date", "fact_student_objective_assessment"], ["dim_date", "fact_student_program"], ["dim_date", "fact_student_school_attendance"], ["dim_education_organization", "dim_staff"], ["dim_education_organization", "dim_student"], ["dim_education_organization", "fact_discipline_action"], ["dim_education_organization", "fact_discipline_incident_behavior"], ["dim_education_organization", "fact_grade"], ["dim_education_organization", "fact_staff_section"], ["dim_education_organization", "fact_student_academic_record"], ["dim_education_organization", "fact_student_assessment"], ["dim_education_organization", "fact_student_enrollment"], ["dim_education_organization", "fact_student_school_attendance"], ["dim_education_organization", "fact_student_section_enrollment"], ["dim_grade_type", "fact_grade"], ["dim_parent", "dim_staff"], ["dim_parent", "fact_student_parent"], ["dim_school_year", "fact_discipline_action"], ["dim_school_year", "fact_grade"], ["dim_school_year", "fact_staff_section"], ["dim_school_year", "fact_student_academic_record"], ["dim_school_year", "fact_student_assessment"], ["dim_school_year", "fact_student_enrollment"], ["dim_school_year", "fact_student_objective_assessment"], ["dim_school_year", "fact_student_program"], ["dim_school_year", "fact_student_school_attendance"], ["dim_school_year", "fact_student_section_enrollment"], ["dim_section", "fact_grade"], ["dim_section", "fact_staff_section"], ["dim_section", "fact_student_section_enrollment"], ["dim_section", "fact_student_section_grade"], ["dim_staff", "fact_staff_section"], ["dim_student", "dim_student_late"], ["dim_student", "fact_discipline_action"], ["dim_student", "fact_discipline_incident_behavior"], ["dim_student", "fact_grade"], ["dim_student", "fact_student_academic_record"], ["dim_student", "fact_student_assessment"], ["dim_student", "fact_student_enrollment"], ["dim_student", "fact_student_objective_assessment"], ["dim_student", "fact_student_parent"], ["dim_student", "fact_student_program"], ["dim_student", "fact_student_school_attendance"], ["dim_student", "fact_student_section_enrollment"], ["dim_student", "fact_student_section_grade"], ["fact_discipline_incident", "fact_discipline_action"], ["fact_grade", "fact_student_section_grade"], ["fact_student_assessment", "fact_student_objective_assessment"], ["fact_student_enrollment", "fact_grade"], ["fact_student_enrollment", "fact_student_academic_record"], ["fact_student_enrollment", "fact_student_assessment"], ["fact_student_enrollment", "fact_student_parent"], ["fact_student_enrollment", "fact_student_program"], ["fact_student_program", "dim_student_late"], ["fact_student_section_enrollment", "fact_student_school_attendance"]]});
+    if(h)buildDag(h,{"nodes": [{"id": "dim_date", "level": 0, "pos": 0}, {"id": "dim_school_year", "level": 0, "pos": 1}, {"id": "dim_education_organization", "level": 0, "pos": 2, "posLabel": "#2–#3"}, {"id": "dim_student", "level": 1, "pos": 4, "label": "dim_student", "note": "insert, passes 2 to 6", "split": true, "posLabel": "#4–#9", "flag2": true}, {"id": "dim_staff", "level": 1, "pos": 10}, {"id": "dim_parent", "level": 0, "pos": 10, "note": "same step as dim_staff"}, {"id": "dim_section", "level": 0, "pos": 11}, {"id": "fact_student_enrollment", "level": 2, "pos": 12, "posLabel": "#12–#14"}, {"id": "fact_student_section_enrollment", "level": 2, "pos": 15}, {"id": "fact_discipline_incident", "level": 0, "pos": 16}, {"id": "fact_discipline_incident_behavior", "level": 2, "pos": 17}, {"id": "fact_discipline_action", "level": 2, "pos": 18}, {"id": "fact_student_school_attendance", "level": 3, "pos": 19}, {"id": "fact_student_parent", "level": 3, "pos": 20}, {"id": "fact_staff_section", "level": 2, "pos": 21}, {"id": "fact_student_program", "level": 3, "pos": 22, "flag2": true}, {"id": "dim_student_late", "level": 4, "pos": 23, "label": "dim_student", "note": "passes 7 to 16", "split": true, "posLabel": "#23–#32", "flag2": true}, {"id": "fact_student_academic_record", "level": 3, "pos": 33}, {"id": "fact_grade", "level": 3, "pos": 34, "flag": true}, {"id": "dim_grade_type", "level": 0, "pos": 35, "flag": true, "note": "moves before fact_grade"}, {"id": "fact_student_assessment", "level": 3, "pos": 39, "posLabel": "#36–#39", "note": "includes 3 staging steps"}, {"id": "fact_student_objective_assessment", "level": 4, "pos": 48, "posLabel": "#40 and #48"}, {"id": "fact_student_section_grade", "level": 4, "pos": 49}], "edges": [["dim_date", "fact_discipline_action"], ["dim_date", "fact_staff_section"], ["dim_date", "fact_student_assessment"], ["dim_date", "fact_student_objective_assessment"], ["dim_date", "fact_student_program"], ["dim_date", "fact_student_school_attendance"], ["dim_education_organization", "dim_staff"], ["dim_education_organization", "dim_student"], ["dim_education_organization", "fact_discipline_action"], ["dim_education_organization", "fact_discipline_incident_behavior"], ["dim_education_organization", "fact_grade"], ["dim_education_organization", "fact_staff_section"], ["dim_education_organization", "fact_student_academic_record"], ["dim_education_organization", "fact_student_assessment"], ["dim_education_organization", "fact_student_enrollment"], ["dim_education_organization", "fact_student_school_attendance"], ["dim_education_organization", "fact_student_section_enrollment"], ["dim_grade_type", "fact_grade"], ["dim_parent", "dim_staff"], ["dim_parent", "fact_student_parent"], ["dim_school_year", "fact_discipline_action"], ["dim_school_year", "fact_grade"], ["dim_school_year", "fact_staff_section"], ["dim_school_year", "fact_student_academic_record"], ["dim_school_year", "fact_student_assessment"], ["dim_school_year", "fact_student_enrollment"], ["dim_school_year", "fact_student_objective_assessment"], ["dim_school_year", "fact_student_program"], ["dim_school_year", "fact_student_school_attendance"], ["dim_school_year", "fact_student_section_enrollment"], ["dim_section", "fact_grade"], ["dim_section", "fact_staff_section"], ["dim_section", "fact_student_section_enrollment"], ["dim_section", "fact_student_section_grade"], ["dim_staff", "fact_staff_section"], ["dim_student", "dim_student_late"], ["dim_student", "fact_discipline_action"], ["dim_student", "fact_discipline_incident_behavior"], ["dim_student", "fact_grade"], ["dim_student", "fact_student_academic_record"], ["dim_student", "fact_student_assessment"], ["dim_student", "fact_student_enrollment"], ["dim_student", "fact_student_objective_assessment"], ["dim_student", "fact_student_parent"], ["dim_student", "fact_student_program"], ["dim_student", "fact_student_school_attendance"], ["dim_student", "fact_student_section_enrollment"], ["dim_student", "fact_student_section_grade"], ["fact_discipline_incident", "fact_discipline_action"], ["fact_grade", "fact_student_section_grade"], ["fact_student_assessment", "fact_student_objective_assessment"], ["fact_student_enrollment", "fact_grade"], ["fact_student_enrollment", "fact_student_academic_record"], ["fact_student_enrollment", "fact_student_assessment"], ["fact_student_enrollment", "fact_student_parent"], ["fact_student_enrollment", "fact_student_program"], ["fact_student_program", "dim_student_late"], ["fact_student_section_enrollment", "fact_student_school_attendance"]]});
   })();
 
   /* mechanism visuals */
