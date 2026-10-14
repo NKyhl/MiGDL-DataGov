@@ -460,7 +460,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
       <div class="hcard"><h4>6. No current-row filter on conf reads</h4><p><code>currentflag = TRUE</code> is commented out in the SQL of 13 of the 22 derived tables (for example <code>dim_staff</code>, <code>dim_student</code> and <code>fact_grade</code>), so SCD2 expired rows and TYPE1 delete tombstones can feed derived tables.</p></div>
       <div class="hcard"><h4>7. Per-statement commits</h4><p>The runner commits after each SQL statement and rolls back only the one that fails, so an error partway through a table's SQL statements leaves the earlier statements committed and the table partly written. Today, this only matters for tables with several statements (<code>dim_student</code>, <code>dim_education_organization</code>, and <code>fact_student_enrollment</code>).</p></div>
       <div class="hcard"><h4>8. Inconsistent natural key usage</h4><p><code>ROW_NUMBER()</code> dedups are used to keep the most recently updated conf row per key, but some dedups are partitioned on a different set of columns than the append-only guard (assumed natural key). The two can disagree about which rows count as the same.</p></div>
-      <div class="hcard"><h4>9. Inconsistent student identity</h4><p>Students have both a district id (<code>student_unique_id</code>) and a <code>state_student_id</code>, and tables match on either one with <code>OR</code> conditions, in different orders. <code>dim_student</code> alone uses four formulas to decide which student a row is. With no single id as the identity, the same student can resolve differently from table to table, joins can fan out or mismatch, and <code>dim_student</code> has no well-defined key for a refresh to target.</p></div>
+      <div class="hcard"><h4>9. Inconsistent student identity</h4><p>Students have both a district student id (<code>student_unique_id</code>) and a <code>state_student_id</code>, and tables match on either one with <code>OR</code> conditions, in different orders. <code>dim_student</code> alone uses four formulas to decide which student a row is. With no single id as the identity, the same student can resolve differently from table to table, joins could fan out or mismatch, and <code>dim_student</code> has no well-defined key for a refresh to target.</p></div>
       <div class="hcard"><h4>10. Volatile keys</h4><p>Some keys are hashed from <code>ingestionbatchid</code> and <code>ingestiontimestamp</code>, so a row gets a new key every time it is re-ingested. Most of these keys are never used. The exceptions are <code>school_year_key</code> and <code>grade_type_key</code>, which facts store as foreign keys. If we rebuild those two tables, the stored keys no longer match anything. <code>staff_key</code> and <code>student_key</code> are hashed from a derived id, so they change if that id changes.</p></div>
       <div class="hcard"><h4>11. Whole district-year rescans</h4><p>Each derived statement is parameterized only by district and year. Nothing narrows it to a batch or a set of keys, so the gold main extract evaluates every row for the district and year, and ETL cost is determined by the gold main population size, not the delta size.</p></div>
     </div>
@@ -501,7 +501,17 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <h3 class="hsub">1. Keys and Identity <span class="ptag">Properties 8, 9, 10</span></h3>
     <h4 class="hsub4" id="nku">Natural Key Usage <span class="ptag">Property 8</span></h4>
     <p>Every delta strategy matches rows on a key: to decide whether a row already exists, to dedup, to find the rows that need recomputing, and to join one derived table to another. When a table's keys are inconsistent, a refresh can miss rows, insert duplicates or touch the wrong ones. So the first step to delta correctness is to define the keys for each derived table and use them consistently.</p>
+    <p class="tlabel"><b>Current State Analysis</b></p>
+    <p>Today, most derived tables use different columns for their dedup, their insert guard and their surrogate key. We found five kinds of mismatch in 16 of the 22 tables:</p>
+    <ul class="slist">
+      <li>the dedup and the insert guard use different columns (<code>fact_grade</code> dedups on 8 columns and guards on 6)</li>
+      <li>the school year is missing from one side</li>
+      <li>a nullable key column is compared with <code>=</code>, so the same row can be inserted again on every run</li>
+      <li>a surrogate key hashes parts the guard ignores</li>
+      <li>a surrogate key is not unique (<code>education_org_key</code> omits district and year)</li>
+    </ul>
 
+    <p class="tlabel"><b>Proposed Solution</b></p>
     <p>We propose new natural keys for two tables, listed first below. Then, we propose corrections to 14 other tables which have inconsistent keys across insert guards, dedups, surrogate keys, etc.</p>
 
     <p class="tlabel"><b>Proposed Natural Key Changes</b></p>
@@ -511,7 +521,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <div class="tblwrap2"><table class="dsrc inv" id="nkt" style="min-width:980px"></table></div>
     <p class="tcap">Student identity and volatile keys have their own subsections. Tables not listed (<code>dim_date</code>, <code>dim_grade_type</code>, <code>dim_school_year</code>, <code>dim_section</code>, <code>fact_student_academic_record</code> and <code>fact_student_assessment</code>) had no natural key discrepancy.</p>
 
-    <p>Open items:</p>
+    <p class="tlabel"><b>Open items</b></p>
     <ul class="slist">
       <li><b><code>dim_education_organization</code>:</b> whether to match and target rows by the full natural key and keep <code>education_org_key</code> as a plain attribute, or to add district and year to its hash. The second option changes the stored <code>school_key</code> in every fact.</li>
       <li><b><code>fact_discipline_action</code>:</b> whether the responsibility school belongs in the key.</li>
@@ -520,40 +530,45 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     </ul>
 
     <h4 class="hsub4">Student Identity <span class="ptag">Property 9</span></h4>
+    <p class="tlabel"><b>Current State Analysis</b></p>
     <p>A student can be known by three different ids, and they do not always agree.</p>
     <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:24%"><col style="width:24%"><col style="width:52%"></colgroup><thead><tr><th>Id</th><th>Example</th><th>Where it comes from</th></tr></thead><tbody>
-      <tr><td><b>District id</b><br><code>district_student_id</code></td><td><code>48213</code></td><td>The id the district's SIS sends. It is the id every conf table uses to refer to a student, and it is only unique within a district.</td></tr>
-      <tr><td><b>State id (UIC)</b><br><code>state_student_id</code></td><td><code>1234567890</code></td><td>Michigan's 10-digit Unique Identification Code (UIC), the identification code with the STATE system on the student's education org association. It follows the student across districts. It may be missing.</td></tr>
+      <tr><td><b>District student id</b><br><code>district_student_id</code></td><td><code>48213</code></td><td>The id the district's SIS sends. It is the id every conf table uses to refer to a student, and it is only unique within a district.</td></tr>
+      <tr><td><b>State id (UIC)</b><br><code>state_student_id</code></td><td><code>1234567890</code></td><td>Michigan's 10-digit Unique Identification Code (UIC), the identification code with the STATE system on the student's education org association. It follows the student across districts. It may be missing or arrive late.</td></tr>
       <tr><td><b>Derived id (MiGDL)</b><br><code>student_unique_id</code></td><td><code>1234567890</code> or <code>migdl-ABC-48213</code></td><td>Built by <code>dim_student</code> from the other two, as shown below. It is copied into every fact table. Called the MiGDL id in the API and in DynamoDB.</td></tr>
     </tbody></table></div>
-    <p><b>A naming trap:</b> in the API and in DynamoDB, the "MiGDL id" is the derived <code>student_unique_id</code>. A different column, <code>fact_student_program.migdl_student_id</code>, holds <code>student_key</code>, which is a hash and not a student id. Nothing in the ETL, the DynamoDB publishers or the API reads it. We propose to explicitly deprecate it and then remove it.</p>
-
     <p>When a student is first inserted into <code>dim_student</code>, the derived id is chosen in three steps, taking the first that applies:</p>
     <ol class="slist">
       <li>If the state id is exactly 10 digits, use it. A missing state id counts as not matching.</li>
-      <li>Otherwise, if the district id is exactly 10 digits, use that.</li>
-      <li>Otherwise, tag the district id with its district: <code>migdl-</code>, the district code, then the district id (for example <code>migdl-ABC-48213</code>).</li>
+      <li>Otherwise, if the district student id is exactly 10 digits, use that.</li>
+      <li>Otherwise, tag the district student id with its district: <code>migdl-</code>, the district code, then the district student id (for example <code>migdl-ABC-48213</code>).</li>
     </ol>
-    <p>The result is stored as <code>student_unique_id</code>. The district id is kept as <code>district_student_id</code> and the state id as <code>state_student_id</code>.</p>
+    <p>The result is stored as <code>student_unique_id</code>. The district student id is kept as <code>district_student_id</code> and the state id as <code>state_student_id</code>.</p>
 
-    <p>The ids are then used differently from table to table:</p>
+    <p>The ids are then used differently from place to place:</p>
+    <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:30%"><col style="width:40%"><col style="width:30%"></colgroup><thead><tr><th>Where</th><th>Matches students on</th><th>Note</th></tr></thead><tbody>
+      <tr><td><code>dim_student</code>: dedup</td><td>District student id (state id only if that is missing)</td><td></td></tr>
+      <tr><td><code>dim_student</code>: output id</td><td>The three steps above</td><td></td></tr>
+      <tr><td><code>dim_student</code>: insert guard</td><td>Derived id or state id</td><td>Never the district student id</td></tr>
+      <tr><td><code>dim_student</code>: surrogate <code>student_key</code></td><td>State id first, then derived id</td><td>No district or year in the hash</td></tr>
+      <tr><td><code>dim_student</code>: follow-up passes</td><td>Derived id or state id</td><td>Skip the district student id, so a student with a <code>migdl-</code> id and no state id would not match</td></tr>
+      <tr><td>Fact tables (12 join <code>dim_student</code>)</td><td>Ten use an <code>OR</code> across all three ids. <code>fact_student_parent</code> splits it into three joins and takes the first match. <code>fact_student_program</code> checks only two ids.</td><td>Three (<code>fact_student_parent</code>, <code>fact_student_section_enrollment</code>, <code>fact_student_school_attendance</code>) also leave the school year out of the join</td></tr>
+      <tr><td>Platinum</td><td>The district roster, teacher roster and MiRead context tables join on the derived id alone. Others use the three-way <code>OR</code>.</td><td></td></tr>
+      <tr><td>API</td><td>The student endpoints take <code>student_id_type</code>: <code>uic</code> is the state id, <code>district</code> is the district student id, and <code>migdl</code>, the default, is the derived id</td><td></td></tr>
+      <tr><td>DynamoDB</td><td>The profile product keys items on the derived id. The other student products key on the UIC.</td><td>If a student's derived id changes, their items move to a new key</td></tr>
+    </tbody></table></div>
+    <p class="tcap"><b>Naming trap:</b> in the API and in DynamoDB, the "MiGDL id" is the derived <code>student_unique_id</code>. A different column, <code>fact_student_program.migdl_student_id</code>, holds <code>student_key</code>, which is a hash and not a student id. Nothing in the ETL, the DynamoDB publishers or the API reads it.</p>
+
+    <p>An <code>OR</code> join can match more than one row, so a student's facts can duplicate, and tables can resolve the same student differently. A student whose derived id changes can also be inserted twice. For example, a student first loaded without a state id gets a derived id built from the district student id. When the state id arrives, the derived id changes, the insert guard finds no match, and a second row is inserted for the same student.</p>
+
+    <p class="tlabel"><b>Proposed Solution</b></p> <span class="draft">DRAFT</span>
     <ul class="slist">
-      <li><b>Inside <code>dim_student</code>, four formulas decide which student a row is.</b> The dedup partition prefers the district id, the output id follows the three steps above, the insert guard matches the derived id or the state id, and the surrogate key hashes the state id first.</li>
-      <li><b>Fact tables join on <code>OR</code>.</b> Ten of the twelve fact tables that join <code>dim_student</code> match any of the three ids with an <code>OR</code>. <code>fact_student_parent</code> splits it into three joins and takes the first match, and <code>fact_student_program</code> checks only two ids. Three of them (<code>fact_student_parent</code>, <code>fact_student_section_enrollment</code>, <code>fact_student_school_attendance</code>) also leave the school year out of the join.</li>
-      <li><b>The <code>dim_student</code> follow-up passes skip the district id.</b> They match only the derived id and the state id, so a student with a <code>migdl-</code> id and no state id would not match.</li>
-      <li><b>Platinum is mixed.</b> The district roster, teacher roster and MiRead context tables join on the derived id alone, and others use the three-way <code>OR</code>.</li>
-      <li><b>The API exposes all three ids.</b> The student endpoints take a <code>student_id_type</code> parameter: <code>uic</code> looks students up by <code>state_student_id</code>, <code>district</code> by <code>district_student_id</code>, and <code>migdl</code>, the default, by the derived <code>student_unique_id</code>.</li>
-      <li><b>DynamoDB items are keyed on these ids.</b> The profile product keys items on the derived <code>student_unique_id</code>, and the other student products key on the UIC (<code>state_student_id</code>). If a student's derived id changes, their DynamoDB items move to a new key.</li>
+      <li>Make the district student id, with district and year, the natural key for <code>dim_student</code>. The state id and the derived id become attributes. API and DynamoDB lookups by any of the three ids keep working, because they filter on an attribute and do not match rows between tables.</li>
+      <li>Build in steps: agree the identifier now, then change the insert guard to match on it, which stops new duplicates. Rebuild <code>student_key</code> and clean up the joins later, with the <code>dim_student</code> delta work.</li>
+      <li>Explicitly deprecate <code>fact_student_program.migdl_student_id</code>, then remove it.</li>
     </ul>
-    <p>An <code>OR</code> join can match more than one row, so a student's facts can duplicate, and tables can resolve the same student differently. A student whose derived id changes, for example when a state id arrives later, can also be inserted twice.</p>
 
-    <!-- <p>Our proposed solution:</p>
-    <ul class="slist">
-      <li>Every table that joins students identifies a student by the raw <code>student_unique_id</code> from conf (what becomes <code>district_student_id</code> in <code>dim_student</code>), with district and year. <code>dim_staff</code> already follows this pattern for staff by matching on a stable raw identifier.</li>
-      <li><code>state_student_id</code> is an attribute of the student, not a second key, so no join or insert guard matches on either id. The API can still look students up by any of the three ids, because those lookups filter on an attribute and do not match rows between tables.</li>
-    </ul> -->
-
-    <p>Open items:</p>
+    <p class="tlabel"><b>Open items</b></p>
     <ul class="slist">
       <li><b>Natural key and timing:</b> which identifier is the natural key for <code>dim_student</code>, and whether to account for it in the first pass, in steps, or later.</li>
       <li><b><code>student_key</code>:</b> whether it is rebuilt from that identifier or keeps its stored values.</li>
@@ -562,9 +577,10 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     </ul>
 
     <h4 class="hsub4" id="vk">Volatile Keys <span class="ptag">Property 10</span></h4>
+    <p class="tlabel"><b>Current State Analysis</b></p>
     <p>Volatile keys are keys that are generated with <code>ingestionbatchid</code> or <code>ingestiontimestamp</code> embedded in their hash. Because those fields change when a gold main row is recomputed (exists today) or reversioned on update (after G3/G4 implementation), these keys are not stable enough to be used for matching in ETL, as the source for determining if a key is dirty, or for JOINs.</p>
-    <p>Today, most of these volatile keys are not read at all, so there is little to no impact. However, there are two gold derived keys that are used as foreign keys in other tables, and a rebuild of the source table would leave those stored values pointing at nothing. We recommend explicitly deprecating or removing these keys where they are not needed anymore to prevent error or to correct the hashes for keys that we do want to use for matching, joins, or dirty key sourcing.</p>
-    <p>Two other keys, <code>staff_key</code> and <code>student_key</code>, are not volatile, but they hash a derived id instead of the raw one, so they change when that id does. They are stored as foreign keys, so they carry the same risk when rows are recomputed. The <code>staff_key</code> fix is local to <code>dim_staff</code>. The <code>student_key</code> fix depends on which identifier we choose for students (see Student Identity).</p>
+    <p>Today, most of these volatile keys are not read at all, so there is little to no impact. However, there are two gold derived keys that are used as foreign keys in other tables, and a rebuild of the source table would leave those stored values pointing at nothing.</p>
+    <p>Two other keys, <code>staff_key</code> and <code>student_key</code>, are not volatile, but they hash a derived id instead of the raw one, so they change when that id does. They are stored as foreign keys, so they carry the same risk when rows are recomputed. </p>
 
     <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:14%"><col style="width:18%"><col style="width:17%"><col style="width:26%"><col style="width:25%"></colgroup><thead><tr><th>Key</th><th>Table</th><th>Stability</th><th>Usage</th><th>Proposed action</th></tr></thead><tbody>
       <tr><td><code>migdl_edu_org_key</code></td><td><code>dim_education_organization</code></td><td><span class="vs vol">Volatile</span></td><td>Not used for matching or joins.</td><td>Deprecate</td></tr>
@@ -584,6 +600,16 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     </tbody></table></div>
     <p class="tcap"><b>Note for Platinum Layer Analysis:</b> <code>component_key</code> is volatile and used as a foreign key in <code>platinum.dim_miread_literacy_component</code>. It hashes the current time, so it changes on every run.</p>
 
+    <p class="tlabel"><b>Proposed Solution</b></p>
+    <ul class="slist">
+      <li>Rebuild <code>school_year_key</code>, <code>grade_type_key</code> and <code>staff_key</code> from natural key columns before their tables move to recompute. The <code>staff_key</code> fix is local to <code>dim_staff</code>.</li>
+      <li>Settle <code>student_key</code> together with the student identity decision (see Student Identity).</li>
+      <li>Explicitly deprecate the unused <code>migdl_</code> keys where they are not needed anymore, and remove <code>migdl_staff_key</code> and <code>migdl_student_key</code> from the API specs.</li>
+    </ul>
+
+    <p class="tlabel"><b>Open items</b></p>
+    <p>None beyond <code>student_key</code>, covered under Student Identity.</p>
+
     <h3 class="hsub">2. Order and Dependencies <span class="ptag">Property 5</span></h3>
     <p>The next step to achieving a gold derived delta correctness solution is to understand the table-to-table dependencies that exist within the layer. 15 of the 22 derived tables read another derived table, so a table must refresh after the tables it reads, and its dirty keys must come from them.</p>
     <h4 class="hsub4">Table Dependency Analysis</h4>
@@ -601,7 +627,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
 
     <p>Separately, the gold derived load also builds staging temp tables, which exist only during the gold derived connection. Some are necessary, and others are wasted compute:</p>
     <ol class="slist flags">
-      <li class="m"><b>TEMP table steps #41–#47 are never used in derived and should be removed (not shown).</b> These steps in today's gold derived load build staging temp tables that gold derived does not use, so that compute is wasted. The same steps already run in the platinum layer load, where they are needed. Additionally, <code>stg_miread_foa_join</code> (step #47) reads <code>fact_student_objective_assessment</code> (step #48), which is out of order. We should remove all of these steps from <code>gold_derived.yaml</code>.</li>
+      <li class="m"><b>TEMP table steps #41–#47 are never used in derived and should be removed (not shown).</b> These steps in today's gold derived load build staging temp tables that gold derived does not use, so that compute is wasted. The same steps already run again in the platinum layer load, where they are needed. Additionally, <code>stg_miread_foa_join</code> (step #47) reads <code>fact_student_objective_assessment</code> (step #48), which is out of order. We should remove all of these steps from <code>gold_derived.yaml</code>.</li>
       <li class="r"><b>TEMP table steps #36–#38 and #40 are used in derived and built again in platinum.</b> These staging tables are used by gold derived. They feed <code>fact_student_assessment</code> (#39) and <code>fact_student_objective_assessment</code> (#48), and they are shown in the graph with dotted borders and a blue circle. However, they only live during the life of the transaction. Platinum needs them too, and its load builds them again. We could consider making these tables persistent so we do not build them twice.</li>
     </ol>
     <p>Dirty keys should follow the same edges: a changed key in one table dirties the keys that read it. <code>dim_student</code>, <code>dim_education_organization</code> and <code>dim_school_year</code> have the most readers (12, 11 and 10, respectively), so a change to them reaches the most tables.</p>
@@ -1431,7 +1457,7 @@ ENTITIES.push({
   id:"dim_student",
   title:"dim_student",
   layer:"Gold derived",
-  g5:{"grain": "1 row per `COALESCE(student_unique_id, state_id), district, year`\nNot well-defined: four different formulas decide which student a row is (see notes)", "up": "dim_student_conf fanned through fact_student_education_org_assoc, fact_student_enrollment_conf, dim_education_organization, dim_school, plus fact_student_program (derived). Also: dim_session, gold descriptors, student_language_instruction_program, fact_student_special_edu_program_assoc, maisa_school_districts.", "shape": "1:1 entity base from dim_student_conf (INSERT) + multi-source attribute fan-in to compute  boolean program flags (15 sibling UPDATE statements)", "strat": "Dirty-key upsert: TBD", "why": "Dirty-key upsert, with the choice between MERGE and key-slice-replace still to be decided. It depends on two open decisions: which identifier defines a student, and which child values the derived row keeps. A MERGE needs one definition of a student and one row per key.", "notes": ["Child data handling: most columns come from one arbitrary row of the association conf table, which has many rows per student. That covers the characteristic flags (economically disadvantaged, migrant, homeless, foster care, awaiting foster care, military connected, gifted), `race_ethnicity_detail`, `is_hispanic_latino`, email, phone and address. A student with several characteristics gets only the one on the picked row.", "Combined across all rows: `race_ethnicity` is a list of races, with Multi Racial added when there is more than one. `is_special_education` and `is_english_learner` start FALSE and are recomputed from other tables on every run by later UPDATE passes, which set and clear them (passes 3 and 4 for special education, 9 and 10 for English learner).", "`is_student_with_disability` is handled differently. The main INSERT sets it from the one picked association row's `disabilitydescriptor`, and pass 2 can only clear it, when no current association row has a disability. Nothing sets it to TRUE afterwards, so a student whose disability is on a row that was not picked, or appears after the insert, stays FALSE.", "`home_language`, `student_language` and `state_student_id` are each picked separately, one value each.", "The API reads these columns directly, and `platinum.curated_district_roster` reads most of them.", "Four different formulas decide which student a row is: 1. the dedup partition prefers the district id, 2. the output `student_unique_id` is the state id if it is 10 digits, otherwise the district id if it is 10 digits, otherwise `migdl-`, the district code and the district id, 3. the insert guard matches the derived id or the state id, 4. the `student_key` surrogate hashes the state id first.", "A student first loaded without a state id gets a derived id built from the district id. When the state id arrives, the derived id changes, the guard finds no match, and a second row is inserted for the same student.", "Proposed: use one identifier as the natural key, with district and year, and treat the state id and the derived id as attributes. Open: which identifier (the district id is stored as `district_student_id`), whether `student_key` is rebuilt from it, and whether facts and DynamoDB keep storing the derived id.", "`dim_student` runs in two parts: the insert and passes 2 to 6 first, then passes 7 to 16 after `fact_student_program`, which itself reads `dim_student`."]},
+  g5:{"grain": "1 row per `COALESCE(student_unique_id, state_id), district, year`\nNot well-defined: four different formulas decide which student a row is (see notes)", "up": "dim_student_conf fanned through fact_student_education_org_assoc, fact_student_enrollment_conf, dim_education_organization, dim_school, plus fact_student_program (derived). Also: dim_session, gold descriptors, student_language_instruction_program, fact_student_special_edu_program_assoc, maisa_school_districts.", "shape": "1:1 entity base from dim_student_conf (INSERT) + multi-source attribute fan-in to compute  boolean program flags (15 sibling UPDATE statements)", "strat": "Dirty-key upsert: TBD", "why": "Dirty-key upsert, with the choice between MERGE and key-slice-replace still to be decided. It depends on two open decisions: which identifier defines a student, and which child values the derived row keeps. A MERGE needs one definition of a student and one row per key.", "notes": ["Child data handling: most columns come from one arbitrary row of the association conf table, which has many rows per student. That covers the characteristic flags (economically disadvantaged, migrant, homeless, foster care, awaiting foster care, military connected, gifted), `race_ethnicity_detail`, `is_hispanic_latino`, email, phone and address. A student with several characteristics gets only the one on the picked row.", "Combined across all rows: `race_ethnicity` is a list of races, with Multi Racial added when there is more than one. `is_special_education` and `is_english_learner` start FALSE and are recomputed from other tables on every run by later UPDATE passes, which set and clear them (passes 3 and 4 for special education, 9 and 10 for English learner).", "`is_student_with_disability` is handled differently. The main INSERT sets it from the one picked association row's `disabilitydescriptor`, and pass 2 can only clear it, when no current association row has a disability. Nothing sets it to TRUE afterwards, so a student whose disability is on a row that was not picked, or appears after the insert, stays FALSE.", "`home_language`, `student_language` and `state_student_id` are each picked separately, one value each.", "The API reads these columns directly, and `platinum.curated_district_roster` reads most of them.", "Four different formulas decide which student a row is: 1. the dedup partition prefers the district student id, 2. the output `student_unique_id` is the state id if it is 10 digits, otherwise the district student id if it is 10 digits, otherwise `migdl-`, the district code and the district student id, 3. the insert guard matches the derived id or the state id, 4. the `student_key` surrogate hashes the state id first.", "A student first loaded without a state id gets a derived id built from the district student id. When the state id arrives, the derived id changes, the guard finds no match, and a second row is inserted for the same student.", "Proposed: use one identifier as the natural key, with district and year, and treat the state id and the derived id as attributes. Open: which identifier (the district student id is stored as `district_student_id`), whether `student_key` is rebuilt from it, and whether facts and DynamoDB keep storing the derived id.", "`dim_student` runs in two parts: the insert and passes 2 to 6 first, then passes 7 to 16 after `fact_student_program`, which itself reads `dim_student`."]},
   solution:"Dirty-key upsert (TBD)",
   blurb:"Two conf tables fan out: dim_student_conf (4 child tables, none read by derived) and the education organization association conf (15 child tables, 6 grandchild tables). Gold derived keeps 1 row per student.",
   headline:["student and association trees","1 row per child combination","same grain, SCD2","1 row per student"],
@@ -1610,7 +1636,7 @@ var INVENTORY=[
   "dim_parent",
   "parent_unique_id, schooldistrictid, schoolyear",
   "1:1 with dim_parent_conf",
-  "Dirty-key upsert: TBD"
+  "Dirty-key upsert: MERGE"
  ],
  [
   "dim_school_year",
@@ -1640,7 +1666,7 @@ var INVENTORY=[
   "fact_discipline_action",
   "discipline_action_identifier, student_unique_id, discipline_date, schooldistrictid, school_year",
   "1:1 with enrichment",
-  "Dirty-key upsert: TBD"
+  "Dirty-key upsert: MERGE"
  ],
  [
   "fact_discipline_incident",
@@ -1791,7 +1817,7 @@ var NOTES=[
   "grain": "1 row per (`parent_unique_id`, `schooldistrictid`, `schoolyear`)",
   "up": "dim_parent_conf (gold conf)",
   "shape": "1:1 with dim_parent_conf",
-  "strat": "Dirty-key upsert: TBD",
+  "strat": "Dirty-key upsert: MERGE",
   "notes": [
    "Child data handling: Child-level columns that appear: primary_email, primary_phone, address_*. One arbitrary row is chosen. API uses them. Platinum reads email and phone.",
    "Note: the SQL is in the same file as dim_staff.",
@@ -1806,7 +1832,7 @@ var NOTES=[
     "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/dim_staff.sql"
    ]
   ],
-  "why": "Dirty-key upsert, with the choice between MERGE and key-slice-replace still to be decided. The conf source has child fan-out, and the derived table currently keeps one arbitrary row per key (N:1). A MERGE works only if the derived table stays one row per key, with a deterministic pick among the conf rows, a recompute from all current conf rows for a dirty key, and a dedup key that matches the MERGE key. If child rows are kept in derived, the row count per key varies and the table would need key-slice-replace instead. The decision therefore depends on the derived grain decision, and on which child values should be kept. The `migdl_` key embeds the batch id and timestamp, so any MERGE would have to match on the natural key."
+  "why": "Merge on the natural key (`parent_unique_id`, `schooldistrictid`, `schoolyear`). The table keeps one row per parent, so a dirty parent maps to one row to update or insert. This needs a deterministic pick among the conf rows, a recompute from all of a parent's current conf rows, and a dedup that uses the same key as the MERGE. It cannot use `migdl_parent_key`, which embeds the batch id and timestamp. If we later keep child rows (email, phone, address), this becomes key-slice-replace."
  },
  {
   "table": "dim_school_year",
@@ -1854,7 +1880,7 @@ var NOTES=[
   "grain": "1 row per (`discipline_action_identifier`, `student_unique_id`, `discipline_date`, `schooldistrictid`, `school_year`)",
   "up": "primary: fact_discipline_action_conf\nenrichment: dim_student, dim_education_organization, dim_school, fact_student_discipline_behavior_assoc, fact_discipline_incident_conf, fact_discipline_incident (derived), fact_student_discipline_incident_assoc, dim_school_year, dim_date, maisa_school_districts, gold descriptors, discipline_descriptor_mapping",
   "shape": "1:1 with enrichment",
-  "strat": "Dirty-key upsert: TBD",
+  "strat": "Dirty-key upsert: MERGE",
   "notes": [
    "Child data handling: Child-level columns that appear: discipline_type, discipline_type_key, discipline_type_standardized, the incident association references, the behavior association references and key, discipline_behavior_description, staffreference_staffuniqueid. One row is chosen arbitrarily. Platinum and API use these columns.",
    "Carries denormalized content columns so it degrades gracefully if the incident/behavior joins miss.",
@@ -1868,7 +1894,7 @@ var NOTES=[
     "https://github.com/MiGreatDataLake/amorphic-cicd/blob/e9dd9d18583895ee49ba1cd9b2fac2ae054b3a83/etl/edfi_gold_platinum/sql/gold_derived/fact_discipline_action.sql"
    ]
   ],
-  "why": "Dirty-key upsert, with the choice between MERGE and key-slice-replace still to be decided. The conf source has child fan-out, and the derived table currently keeps one arbitrary row per key (N:1). A MERGE works only if the derived table stays one row per key, with a deterministic pick among the conf rows, a recompute from all current conf rows for a dirty key, and a dedup key that matches the MERGE key. If child rows are kept in derived, the row count per key varies and the table would need key-slice-replace instead. The decision therefore depends on the derived grain decision, and on which child values should be kept. The child-level columns it carries (discipline type, incident and behavior references) come from child tables, so the same choice applies to them."
+  "why": "Merge on the natural key (`discipline_action_identifier`, `student_unique_id`, `discipline_date`, `schooldistrictid`, `school_year`). The table keeps one row per action, so a dirty action maps to one row to update or insert. This needs a deterministic pick among the conf rows, a recompute from all of an action's current conf rows, and a dedup that uses the same key as the MERGE. Dirty keys come from several tables, not just `fact_discipline_action_conf`. The discipline type, incident and behavior columns come from child tables and are picked the same way. If we later keep those child rows, this becomes key-slice-replace."
  },
  {
   "table": "fact_discipline_incident",
