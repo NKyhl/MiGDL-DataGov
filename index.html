@@ -333,6 +333,15 @@ ul.lo li.gone small{text-decoration:none;display:inline-block}
 .hcard p{font-size:14px;color:var(--ink-2);margin:4px 0 0}
 .tblwrap2{overflow-x:auto;margin-top:10px;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:2px 12px}
 table.inv{table-layout:fixed;width:100%;min-width:980px}
+.ctags{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;align-items:center}
+.ctag{display:block;text-align:center;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:0;line-height:1.5;padding:0 2px;border-radius:4px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 22%,var(--surface));color:var(--ink);white-space:nowrap}
+.ctag.d{--c:var(--l-derived)}.ctag.p{--c:var(--l-plat)}.ctag.a{--c:var(--l-api)}
+.nval.ncons{white-space:normal}
+.ncons .cr{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.ncons .cr:last-child{margin-bottom:0}
+.ncons .ctag{display:inline-block;flex:none;width:48px;font-size:10.5px;padding:0 4px}
+.ncons .cn{font-size:13.5px;line-height:1.55;color:var(--ink-2);overflow-wrap:anywhere}
+.ncons .cn code{font-size:12px}
 table.inv td.dk{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);line-height:1.45;overflow-wrap:anywhere}
 table.inv td:first-child{overflow-wrap:anywhere}
 table.inv td.wtc{white-space:nowrap}
@@ -447,8 +456,9 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
 
 
     <h3 class="hsub">Table Inventory</h3>
-    <p>All 22 gold derived tables are listed below, along with their current driving key and build shape. Every table has a page, linked on the right. Notes pages hold basic analysis and notes gathered from Tiger Team 3 discussion thus far. Walkthrough pages additionally include visualizations for helping readers understand build shape, grain, known consumers, etc.</p>
+    <p>All 22 gold derived tables are listed below, along with their current driving key, build shape and consumers. Every table has a page, linked on the right. Notes pages hold basic analysis and notes gathered from Tiger Team 3 discussion thus far. Walkthrough pages additionally include visualizations for helping readers understand build shape, grain, known consumers, etc.</p>
     <div class="tblwrap2"><table class="dsrc inv" id="inv"></table></div>
+    <p class="tcap">* Consumers are the layers that read a table directly: another derived table (DER), a platinum table or one of its staging tables (PLAT), or the API, which includes the DynamoDB publishers (API). A table with no API tag can still reach the API through the tables that read it.</p>
 
     <h3 class="hsub">Properties of the Existing ETL</h3>
     <div class="prows">
@@ -1610,6 +1620,49 @@ ENTITIES.push({
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
 function fmt(n){return Number(n).toLocaleString();}
+/* Direct readers of each derived table, from the lineage reference (staging temp tables resolved to the table they feed).
+   d = other derived tables, p = platinum tables, a = API routes and DynamoDB publishers (publisher jobs added from etl/ddb_publish). */
+var SHOW_CONSUMER_NAMES=true;   /* false: the Consumers row on the Notes and Walkthrough pages shows only the tags */
+var CONSUMERS={
+    dim_date:{"d":["fact_discipline_action","fact_staff_section","fact_student_assessment","fact_student_objective_assessment","fact_student_program","fact_student_school_attendance"],"p":["fact_ewims_student_early_warning"],"a":[]},
+    dim_education_organization:{"d":["dim_staff","dim_student","fact_discipline_action","fact_discipline_incident_behavior","fact_grade","fact_staff_section","fact_student_academic_record","fact_student_assessment","fact_student_enrollment","fact_student_school_attendance","fact_student_section_enrollment"],"p":["curated_district_roster","curated_enrollment_history","curated_ewims_student_early_warn_incidents_actions","curated_student_discipline","fact_ewims_student_early_warning","fact_miread_student_context","fact_miread_student_context_enriched"],"a":["/app/district/schools","/app/district/sections","/app/student/enrollment","/miewims/district/gradingperiods","ddb_publish_enroll","ddb_publish_gradingperiods","ddb_publish_schools"]},
+    dim_grade_type:{"d":["fact_grade"],"p":[],"a":[]},
+    dim_parent:{"d":["fact_student_parent"],"p":["fact_miread_student_context"],"a":["/app/student/contacts","ddb_publish_contacts"]},
+    dim_school_year:{"d":["fact_discipline_action","fact_grade","fact_staff_section","fact_student_academic_record","fact_student_assessment","fact_student_enrollment","fact_student_objective_assessment","fact_student_program","fact_student_school_attendance","fact_student_section_enrollment"],"p":[],"a":[]},
+    dim_section:{"d":["fact_grade","fact_staff_section","fact_student_section_enrollment","fact_student_section_grade"],"p":["curated_district_roster","curated_enrollment_history","fact_ewims_student_early_warning","fact_miread_student_context","fact_miread_student_context_enriched","fact_teacher_roster"],"a":["/app/district/sections","/app/student/sectionenrollment"]},
+    dim_staff:{"d":["fact_staff_section"],"p":["curated_enrollment_history","fact_miread_student_context","fact_miread_student_context_enriched","fact_teacher_roster"],"a":["/app/district/staff"]},
+    dim_student:{"d":["fact_discipline_action","fact_discipline_incident_behavior","fact_grade","fact_student_academic_record","fact_student_assessment","fact_student_enrollment","fact_student_objective_assessment","fact_student_parent","fact_student_program","fact_student_school_attendance","fact_student_section_enrollment","fact_student_section_grade"],"p":["curated_district_roster","curated_enrollment_history","curated_student_discipline","fact_ewims_student_early_warning","fact_miread_student_assessment_component","fact_miread_student_context","fact_miread_student_context_enriched","fact_teacher_roster"],"a":["/app/district/student","/app/student","/app/student/attendance","/app/student/contacts","/app/student/enrollment","/app/student/sectionenrollment","/app/student/sectiongrades","ddb_publish_attend","ddb_publish_contacts","ddb_publish_enroll","ddb_publish_profile"]},
+    fact_discipline_action:{"d":[],"p":["curated_ewims_student_early_warn_incidents_actions","curated_student_discipline","fact_ewims_student_early_warning","fact_miread_student_context","fact_miread_student_context_enriched"],"a":[]},
+    fact_discipline_incident:{"d":["fact_discipline_action"],"p":["curated_student_discipline","fact_miread_student_context","fact_miread_student_context_enriched"],"a":[]},
+    fact_discipline_incident_behavior:{"d":[],"p":["curated_student_discipline"],"a":[]},
+    fact_grade:{"d":["fact_student_section_grade"],"p":[],"a":[]},
+    fact_staff_section:{"d":[],"p":["curated_district_roster","curated_enrollment_history","fact_miread_student_context","fact_miread_student_context_enriched","fact_teacher_roster"],"a":[]},
+    fact_student_academic_record:{"d":[],"p":["fact_ewims_student_early_warning"],"a":[]},
+    fact_student_assessment:{"d":["fact_student_objective_assessment"],"p":["fact_miread_student_assessment","fact_miread_student_assessment_component"],"a":[]},
+    fact_student_enrollment:{"d":["fact_grade","fact_student_academic_record","fact_student_assessment","fact_student_parent","fact_student_program"],"p":["curated_district_roster","curated_enrollment_history","fact_ewims_student_early_warning","fact_miread_student_assessment","fact_miread_student_assessment_component","fact_miread_student_context","fact_miread_student_context_enriched","fact_teacher_roster"],"a":["/app/student/enrollment","ddb_publish_enroll"]},
+    fact_student_objective_assessment:{"d":[],"p":["fact_miread_student_assessment_component"],"a":[]},
+    fact_student_parent:{"d":[],"p":["fact_miread_student_context"],"a":["/app/student/contacts","ddb_publish_contacts"]},
+    fact_student_program:{"d":["dim_student"],"p":[],"a":[]},
+    fact_student_school_attendance:{"d":[],"p":["fact_miread_student_context"],"a":["/app/student/attendance","ddb_publish_attend"]},
+    fact_student_section_enrollment:{"d":["fact_student_school_attendance"],"p":["curated_district_roster","curated_enrollment_history","fact_miread_student_context","fact_miread_student_context_enriched","fact_teacher_roster"],"a":["/app/student/sectionenrollment"]},
+    fact_student_section_grade:{"d":[],"p":[],"a":["/app/student/sectiongrades"]}
+  };
+var CTAG=[["d","DER","Read by another gold derived table"],["p","PLAT","Read by a platinum table or one of its staging tables"],["a","API","Read by the API or a DynamoDB publisher"]];
+function consumerTags(t){   /* inventory: three fixed slots, so DER, PLAT and API line up down the table */
+  var c=CONSUMERS[t]||{};
+  return '<div class="ctags">'+CTAG.map(function(k){
+    return (c[k[0]]&&c[k[0]].length)?'<span class="ctag '+k[0]+'" title="'+k[2]+'">'+k[1]+'</span>':'<span></span>';
+  }).join("")+'</div>';
+}
+function consumerRows(t){   /* detail pages: the tag, then who reads the table */
+  var c=CONSUMERS[t]||{},out="";
+  CTAG.forEach(function(k){
+    var n=c[k[0]]||[];if(!n.length)return;
+    var names=SHOW_CONSUMER_NAMES?'<span class="cn">'+n.map(function(x){return '<code>'+esc(x)+'</code>';}).join(", ")+'</span>':"";
+    out+='<div class="cr"><span class="ctag '+k[0]+'" title="'+k[2]+'">'+k[1]+'</span>'+names+'</div>';
+  });
+  return out;
+}
 var INVENTORY=[
  [
   "dim_date",
@@ -2181,10 +2234,16 @@ function stratColor(s){
 function rich(s){   /* escape, then turn `code` spans into <code> and keep line breaks */
   return esc(s).replace(/`([^`]+)`/g,"<code>$1</code>");
 }
-function notesCard(N){
-  var fields=[["Grain &amp; driving key","grain"],["Upstream source tables","up"],["Build shape","shape"],["Candidate strategy","strat"],["Why this strategy","why"],["Notes","notes"]];
+function notesCard(N,table){
+  var tbl=table||N.table;
+  var fields=[["Grain &amp; driving key","grain"],["Upstream source tables","up"],["Build shape","shape"],["Direct consumers","consumers"],["Candidate strategy","strat"],["Why this strategy","why"],["Notes","notes"]];
   var card=el("div","ncard");
   fields.forEach(function(f){
+    if(f[1]==="consumers"){
+      var cr=consumerRows(tbl);
+      card.appendChild(el("div","nrow",'<div class="nkey">'+f[0]+'</div><div class="nval ncons">'+(cr||'<span class="nnone">None</span>')+'</div>'));
+      return;
+    }
     var v=N[f[1]];
     if(v===undefined||v===null||String(v).trim()===""||String(v).trim()==="None")v=null;
     var body=v===null?'<span class="nnone">None</span>':rich(v);
@@ -2468,7 +2527,7 @@ function buildEntity(E){
   W.appendChild(el("p","eyebrow",'<a href="#/" class="back">&larr; All tables</a> &nbsp;·&nbsp; Walkthrough'));
   W.appendChild(el("div","etitle",'<h2>'+esc(E.title)+'</h2>'+(E.layer?' <span class="lyr" style="--c:'+(LAYER_COLOR[E.layer]||"var(--accent)")+'">'+esc(E.layer)+'</span>':"")));
   if(E.links)W.appendChild(el("div","sqllinks sublinks",'<b>SQL links:</b> '+E.links.map(function(l){return '<a href="'+(l[1].indexOf("http")===0?l[1]:GH+l[1])+'" target="_blank" rel="noopener">'+esc(l[0])+'</a>';}).join(" · ")));
-  if(E.g5)W.appendChild(notesCard(E.g5));
+  if(E.g5)W.appendChild(notesCard(E.g5,E.id));
   var w=el("div");
   var rn=el("div");
   if(E.reductionNotes)collapsible(W,'<span class="n">1</span><h3>Visualization: Build Shape</h3><p>How '+esc(E.title)+'.sql builds the table from gold main in eight steps. Each picture builds on the one before it.</p>',rn);
@@ -2883,9 +2942,9 @@ function buildEntity(E){
   function wtLink(t){
     return have[t]?'<a class="pill ok wtl" href="#/'+t+'" aria-label="View the '+t+' walkthrough" title="View walkthrough">Walkthrough &rarr;</a>':(haveNotes[t]?'<a class="pill wtl nl" href="#/'+t+'" aria-label="View the notes for '+t+'" title="View notes from the G5 inventory">Notes &rarr;</a>':'');
   }
-  document.getElementById("inv").innerHTML='<colgroup><col style="width:27%"><col style="width:40%"><col style="width:19%"><col style="width:14%"></colgroup><thead><tr><th>Table</th><th>Current Driving key</th><th>Current Build shape</th><th>Table Details</th></tr></thead><tbody>'+
+  document.getElementById("inv").innerHTML='<colgroup><col style="width:26%"><col style="width:29%"><col style="width:17%"><col style="width:12%"><col style="width:16%"></colgroup><thead><tr><th>Table</th><th>Current Driving key</th><th>Current Build shape</th><th>Consumers*</th><th>Table Details</th></tr></thead><tbody>'+
     INVENTORY.map(function(r){
-      return '<tr><td>'+esc(r[0])+'</td><td class="dk">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td class="wtc">'+wtLink(r[0])+'</td></tr>';
+      return '<tr><td>'+esc(r[0])+'</td><td class="dk">'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+consumerTags(r[0])+'</td><td class="wtc">'+wtLink(r[0])+'</td></tr>';
     }).join("")+'</tbody>';
 
   /* solution by table: proposed natural keys, from Keys and Identity */
