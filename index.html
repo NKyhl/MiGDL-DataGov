@@ -561,7 +561,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
 
     <p>An <code>OR</code> join can match more than one row, so a student's facts can duplicate, and tables can resolve the same student differently. A student whose derived id changes can also be inserted twice. For example, a student first loaded without a state id gets a derived id built from the district student id. When the state id arrives, the derived id changes, the insert guard finds no match, and a second row is inserted for the same student.</p>
 
-    <p class="tlabel"><b>Proposed Solution</b></p> <span class="draft">DRAFT</span>
+    <p class="tlabel"><b>Proposed Solution</b></p>
     <ul class="slist">
       <li>Make the district student id, with district and year, the natural key for <code>dim_student</code>. The state id and the derived id become attributes. API and DynamoDB lookups by any of the three ids keep working, because they filter on an attribute and do not match rows between tables.</li>
       <li>Build in steps: agree the identifier now, then change the insert guard to match on it, which stops new duplicates. Rebuild <code>student_key</code> and clean up the joins later, with the <code>dim_student</code> delta work.</li>
@@ -606,9 +606,6 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
       <li>Settle <code>student_key</code> together with the student identity decision (see Student Identity).</li>
       <li>Explicitly deprecate the unused <code>migdl_</code> keys where they are not needed anymore, and remove <code>migdl_staff_key</code> and <code>migdl_student_key</code> from the API specs.</li>
     </ul>
-
-    <p class="tlabel"><b>Open items</b></p>
-    <p>None beyond <code>student_key</code>, covered under Student Identity.</p>
 
     <h3 class="hsub">2. Order and Dependencies <span class="ptag">Property 5</span></h3>
     <p>The next step to achieving a gold derived delta correctness solution is to understand the table-to-table dependencies that exist within the layer. 15 of the 22 derived tables read another derived table, so a table must refresh after the tables it reads, and its dirty keys must come from them.</p>
