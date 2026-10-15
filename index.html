@@ -580,8 +580,8 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
 
     <p class="tlabel"><b>Open items</b></p>
     <ul class="slist">
-      <li><b>Natural key and timing:</b> which identifier is the natural key for <code>dim_student</code>, and whether to account for it in the first pass, in steps, or later.</li>
-      <li><b><code>student_key</code>:</b> whether it is rebuilt from that identifier or keeps its stored values.</li>
+      <li><b>Natural key:</b> which identifier is the natural key for <code>dim_student</code>.</li>
+      <li><b><code>student_key</code>:</b> whether existing values should be rebuilt from that identifier (if it changes) or keep its stored values.</li>
       <li><b>Downstream ids:</b> whether facts and DynamoDB keep storing the derived id.</li>
       <li><b>Impact:</b> whether the duplicate students reach the API or DynamoDB. We have not checked.</li>
     </ul>
