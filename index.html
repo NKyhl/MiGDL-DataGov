@@ -220,6 +220,39 @@ path.cw.w-read{stroke:var(--l-stage)}path.cw.w-write{stroke:var(--ok)}
 .mv .xn b{color:var(--ink)}
 .mv .box small.new{color:var(--ink);font-weight:600}
 .mv .grp{margin:0 0 -2px}
+.mv.cmp .mcols{gap:34px;min-width:880px}
+.mv.cmp .mcol:nth-of-type(1){flex-grow:1.45}
+.mv.cmp .mcol:nth-of-type(2){flex-grow:1.6}
+.mv.cmp .mcol:nth-of-type(3){flex-grow:1.6}
+.mv.cmp .mcol:nth-of-type(4){flex-grow:.7}
+.mv.cmp .mcol{position:relative}
+.mv.cmp .mcol.hasbrace{padding-left:16px}
+.mv.cmp .brace{position:absolute;left:0;top:0;bottom:0;width:10px;border:2px solid var(--faint);border-right:0;border-radius:7px 0 0 7px;pointer-events:none}
+.mv.cmp .box.dots{text-align:center;padding:1px 8px}
+.mv.dk .mcols{gap:34px;min-width:880px}
+.mv.dk .box{overflow-wrap:anywhere}
+.mv.dk .box.dots{text-align:center;padding:1px 8px}
+.mv.dk .vlabel{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink);margin:0 0 10px}
+.mv.dk .cmphead{display:flex;gap:34px;min-width:880px;margin:0 0 8px}
+.mv.dk .cmphead div{flex:none;width:calc((100% - 102px) / 4);font-family:var(--mono);font-size:10.5px;color:var(--muted);padding-bottom:4px;border-bottom:2px solid var(--rule-2)}
+.mv .vnote{margin:12px 0 0;padding-top:8px;border-top:1px dashed var(--rule-2);font-size:12px;line-height:1.45;color:var(--muted)}
+.mv .vnote b{color:var(--ink-2)}
+.mv.dk3 .mcol{position:relative}
+.mv.dk3 .mcol:nth-of-type(1){flex-grow:1.7}
+.mv.dk3 .mcol:nth-of-type(2){flex-grow:1.25}
+.mv.dk3 .mcol:nth-of-type(3){flex-grow:1.05}
+.mv.dk3 .mcol.hasbrace{padding-left:16px}
+.mv.dk3 .brace{position:absolute;left:0;top:0;bottom:0;width:10px;border:2px solid var(--faint);border-right:0;border-radius:7px 0 0 7px;pointer-events:none}
+.mv.dk3 .cmphead div:nth-child(1){width:calc((100% - 68px) * 1.7 / 4)}
+.mv.dk3 .cmphead div:nth-child(2){width:calc((100% - 68px) * 1.25 / 4)}
+.mv.dk3 .cmphead div:nth-child(3){width:calc((100% - 68px) * 1.05 / 4)}
+.mv.cmp .vlabel{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink);margin:0 0 10px}
+.mv.cmp .cmphead{display:flex;gap:34px;min-width:880px;margin:0 0 8px}
+.mv.cmp .cmphead div{flex:none;font-family:var(--mono);font-size:10.5px;color:var(--muted);padding-bottom:4px;border-bottom:2px solid var(--rule-2)}
+.mv.cmp .cmphead div:nth-child(1){width:calc((100% - 102px) * 3.05 / 5.35 + 34px)}
+.mv.cmp .cmphead div:nth-child(2){width:calc((100% - 102px) * 1.6 / 5.35)}
+.mv.cmp .cmphead div:nth-child(3){width:calc((100% - 102px) * .7 / 5.35)}
+.mv.cmp .box{overflow-wrap:anywhere}
 .mv .grp.jg{margin-top:10px}
 .mv path.w.mut{opacity:.22}
 .rnotes .rleg{font-size:13px;color:var(--muted);margin:8px 0 0;max-width:110ch}
@@ -245,8 +278,8 @@ path.cw.w-read{stroke:var(--l-stage)}path.cw.w-write{stroke:var(--ok)}
 .vs.vol{color:var(--warn);background:var(--warn-wash);border-color:var(--warn)}
 .vs.stb{color:var(--ok);background:var(--ok-wash);border-color:var(--ok)}
 .vs.dep{color:var(--accent-ink);background:var(--accent-wash);border-color:var(--accent);white-space:nowrap}
-.tlabel{margin:18px 0 0;font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.tlabel b{font-weight:600}
+.tlabel{margin:18px 0 0;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.tlabel b{font-weight:700}
 .kwrow+.kwrow{margin-top:4px}
 a.kwl{color:inherit;text-decoration:none}
 a.kwl:hover{text-decoration:underline}
@@ -276,6 +309,10 @@ a.kwl:hover{text-decoration:underline}
 .slist{margin:8px 0 0;padding-left:22px;font-size:14.5px;color:var(--ink-2);max-width:106ch}
 .slist li{margin:6px 0}
 .hsub4{font-family:var(--mono);font-size:14px;font-weight:600;margin:18px 0 0;scroll-margin-top:66px}
+.sublabel{margin:14px 0 0;font-size:14px;font-weight:600;color:var(--ink)}
+.sublabel b{font-weight:600}
+.sublabel.pro::before{content:"+ ";color:var(--ok);font-family:var(--mono)}
+.sublabel.con::before{content:"\2212  ";color:var(--warn);font-family:var(--mono)}
 .ovw .mcols{gap:34px}
 .dag{margin-top:10px;padding:10px 12px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--surface-2);overflow-x:auto}
 .dag .dagcols{position:relative;display:flex;gap:46px;align-items:stretch;min-width:1000px}
@@ -505,7 +542,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
   </div>
 
   <div class="hsec" id="sec-mech">
-    <h2>Solution Design <span class="draft">DRAFT</span></h2>
+    <h2>Solution Design</h2>
     <p>This section describes how we propose to solve the properties marked <b>Solve</b> above. Each subsection lists the properties it addresses.</p>
 
     <h3 class="hsub">1. Keys and Identity <span class="ptag">Properties 8, 9, 10</span></h3>
@@ -539,7 +576,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
       <li><b><code>fact_student_program</code>:</b> whether the record's education org id belongs in the key.</li>
     </ul>
 
-    <h4 class="hsub4">Student Identity <span class="ptag">Property 9</span></h4>
+    <h4 class="hsub4" id="si">Student Identity <span class="ptag">Property 9</span></h4>
     <p class="tlabel"><b>Current State Analysis</b></p>
     <p>A student can be known by three different ids, and they do not always agree.</p>
     <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:24%"><col style="width:24%"><col style="width:52%"></colgroup><thead><tr><th>Id</th><th>Example</th><th>Where it comes from</th></tr></thead><tbody>
@@ -617,7 +654,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
       <li>Explicitly deprecate the unused <code>migdl_</code> keys where they are not needed anymore, and remove <code>migdl_staff_key</code> and <code>migdl_student_key</code> from the API specs.</li>
     </ul>
 
-    <h3 class="hsub">2. Order and Dependencies <span class="ptag">Property 5</span></h3>
+    <h3 class="hsub" id="od">2. Order and Dependencies <span class="ptag">Property 5</span></h3>
     <p>The next step to achieving a gold derived delta correctness solution is to understand the table-to-table dependencies that exist within the layer. 15 of the 22 derived tables read another derived table, so a table must refresh after the tables it reads, and its dirty keys must come from them.</p>
     <h4 class="hsub4">Table Dependency Analysis</h4>
     <p>The graph below shows the read dependencies between gold derived tables today, taken from the SQL. Each table shows its sequence number(s) in the load order today (&ldquo;#N&rdquo;, or a range when a table has several steps). Some tables have a colored dot, which corresponds to a specific note below the visual. Hover over a table to trace what it reads and what reads it.</p>
@@ -726,9 +763,82 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
           <li><b>Permanent staging tables:</b> should we keep these permanent where they are used across layers? <code>stg_edfi_assessment_base</code>, <code>stg_edfi_assessment_scores</code>, <code>stg_migdl_parent_assessments</code> and <code>stg_migdl_objective_assessments</code> (steps #36 to #38 and #40) could be permanent tables instead of temp tables, so platinum can reuse them instead of building them again. Open: where they would live, how they are refreshed for each district and year (they are rebuilt in full today), and whether platinum can always run after the derived load for the same district and year.</li>
     </ul>
 
-    <h3 class="hsub">3. Gold Main Extract <span class="ptag">Properties 4, 6, 11</span></h3>
-    <div class="wipnote" role="note"><span class="wipico" aria-hidden="true">&#9888;</span><div><b>This section is in progress!</b> Content is hidden for now.</div></div>
-    <!-- Hidden. To show, remove the hidden attribute to this div and comment-out the in-progress note above. -->
+    <h3 class="hsub">3. Delta Mechanism<span class="ptag">Properties 1, 4, 6, 7, 11</span></h3>
+    <p>When gold main applies an update or a delete, gold derived and platinum need to reflect it. Today neither does: derived tables load insert-only and platinum does the same, so a record that changes or is deleted in gold main stays as it was first loaded.</p>
+
+    <h4 class="hsub4">Short Term: Fix and Optimize the Full Refresh</h4>
+    <p>In the short term, derived and platinum can be kept correct by rebuilding each district-year in full from current gold main rows, after a few fixes and optimizations.</p>
+
+    <p class="tlabel"><b>Fixes (Also Prerequisites for Any Delta)</b></p>
+    <ul class="slist">
+      <li><b>Read current rows only.</b> Filter conf reads on <code>currentflag = TRUE</code>, so tombstones and expired versions drop out.</li>
+      <li><b>Make output deterministic.</b> One key per table and a tiebreak for ties. See <a href="#" data-jump="nku">Natural Key Usage</a> and <a href="#" data-jump="si">Student Identity</a>.</li>
+      <li><b>Keep keys stable across a rebuild.</b> Build keys from natural key columns. See <a href="#" data-jump="vk">Volatile Keys</a>.</li>
+      <li><b>Run each table in order and atomically.</b> Respect derived-to-derived reads and do not leave a table partly written. See <a href="#" data-jump="od">Order and Dependencies</a> and <a href="#" data-jump="rs">Refresh Strategies</a>.</li>
+    </ul>
+
+    <p class="tlabel"><b>Optimizations</b></p>
+    <ul class="slist">
+      <li><b>Process districts together.</b> Data is partitioned by district, so a run for one district uses one Redshift slice while the rest of the cluster is idle. Keep the partitioning for fast joins and process several districts in the same statements. This would also remove the need to stagger runs. Redshift locks writes per table, not per district, so concurrent runs that write the same table queue or fail, which is why runs are spaced out by schedule batch today. One statement for many districts has a single writer per table, and per-statement overhead is paid once per batch instead of once per district. Two things to handle: a failing district would fail the whole statement, and any join or guard that does not include the district would behave differently across districts.</li>
+      <li><b>Move dedups as early as possible.</b> Dedup gold main's child fan-out before joining across it, not after. Joins that fan out must become one-to-one when the dedup moves.</li>
+      <li><b>Skip recompute when gold main has not changed.</b> Skip district-years with no new gold main batches. Gold main already does this in the delta entrypoint, but derived and platinum do not. It needs derived's own record of consumed batches and a way to force a run. To be investigated.</li>
+      <li><b>Remove unnecessary staging builds.</b> The derived load builds 11 staging temp tables, 7 of which only platinum uses, and platinum builds them again. A small win. Details in <a href="#" data-jump="od">Order and Dependencies</a>.</li>
+    </ul>
+    <p>These keep the full refresh. The options below reduce how much of it is done or written.</p>
+
+    <h4 class="hsub4">Long Term: Other Options</h4>
+    <p>A full refresh deletes a district-year slice and writes all of it again. Two long-term options reduce that work in different ways. In both, tables refresh in dependency order.</p>
+    <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:20%"><col style="width:33%"><col style="width:20%"><col style="width:27%"></colgroup><thead><tr><th>Option</th><th>Description</th><th>What it saves over recompute</th><th>Limits</th></tr></thead><tbody>
+      <tr><td><b>1. Diff-based Full Load</b></td><td>Compute each table's full result for the district-year, compare it with the target, and apply only the differences: inserts, updates and deletes.</td><td>Writes and downstream churn. Reads stay the same, and the target is read as well.</td><td>Full compute every run. Needs deterministic output and stable keys.</td></tr>
+      <tr><td><b>2. Dirty-Key-based Delta load</b></td><td>Find the keys that changed in gold main, work out which keys in each derived and platinum table they affect, and rebuild only those.</td><td>Reads, compute and writes.</td><td>Needs change detection and a way to find the affected keys for every table. A missed key leaves a stale row with no error.</td></tr>
+    </tbody></table></div>
+    <p class="tcap">The options can be combined: a dirty-key-based delta load can diff only its dirty keys, so that only real changes are written. The choice can also be made per table.</p>
+
+    <p class="tlabel"><b>Option 1: Diff-based Full Load</b></p>
+    <p>For each table, in dependency order, the source tables are joined and deduped into the full result, likely in a temporary table. The result is compared with the target on the table's key, and only the differences are applied.</p>
+    <p>The example below uses <code>fact_student_enrollment</code> and its source tables as an example, with illustrative rows. Student 1003's enrollment was deleted in gold main.</p>
+    <div id="v-compare"></div>
+    <p class="tcap">Student 1002 is identical on both sides, so it is never written. A full refresh would delete 1001, 1002 and 1003, then write 1001, 1002 and 1004.</p>
+
+    <p class="sublabel pro"><b>Benefits Over a Full Wipe and Refresh</b></p>
+    <ul class="slist">
+      <li><b>Writes only what changed.</b> A full wipe and refresh deletes and rewrites every row in the slice, including unchanged ones. The compare leaves unchanged rows alone, which also leaves less to vacuum.</li>
+      <li><b>Gives an exact change set.</b> A full wipe and refresh rewrites everything, so nothing downstream can tell what changed. The differences are the change set, which downstream publishes could use to write only real changes.</li>
+      <li><b>Keeps the simplicity of a full refresh.</b> No dirty keys, tombstones or mappings, and updates and deletes are handled the same way. It also repairs drift left by past bugs.</li>
+    </ul>
+
+    <p class="sublabel con"><b>Drawbacks Compared with a Full Wipe and Refresh</b></p>
+    <ul class="slist">
+      <li><b>Saves no reads or compute.</b> The full result is still built every run, and the compare adds a full read of the target and a join on the key.</li>
+      <li><b>Needs a careful compare.</b> It must treat NULLs as equal and skip columns that change on every run (audit timestamps, <code>migdl_*</code> keys), or every row looks changed.</li>
+      <li><b>Not yet measured.</b> Whether the compare costs less than deleting and re-inserting the slice depends on how much changes. If most rows change, there is little to save.</li>
+    </ul>
+
+    <p class="tlabel"><b>Option 2: Dirty-Key-based Delta Load</b></p>
+    <p>Tables refresh in dependency order, one layer at a time. Each table finds its own dirty keys from what changed in gold main and in the tables it reads, rebuilds only those keys, and passes its own changes to the tables that read it.</p>
+    <ol class="slist">
+      <li><b>Extract.</b> A table that reads gold main takes the conf rows changed in the unconsumed batch window. They are the changed records' complete current rows.</li>
+      <li><b>Find the dirty keys.</b> A table's own extract gives some of its keys. Keys also become dirty when a table it reads changed: the changed rows, found by their stamp, and the keys in that table's delete log, matched through the table's own join.</li>
+      <li><b>Rebuild.</b> Join the full rows to the table's other source tables and dedup.</li>
+      <li><b>Apply.</b> Write only the rows that differ, using one of the refresh strategies below. Stamp the rows that changed, and log the keys deleted.</li>
+      <li><b>Pass it on.</b> The next layer reads those stamps and that log. Gold main batches are marked consumed once the whole run succeeds, and each downstream table remembers the last stamp it consumed.</li>
+    </ol>
+    <p class="sublabel"><b>Example: Layer by Layer</b></p>
+    <p>The walkthrough uses illustrative rows. <code>dim_student</code> reads gold main directly, so its dirty keys come from gold main alone. <code>fact_student_enrollment</code> reads <code>dim_student</code>, so it is one step downstream and also reads what <code>dim_student</code> changed: its changed rows, found by their stamp, and its delete log.</p>
+    <div id="v-dk1"></div>
+    <p class="tcap">The extract already returns each changed record's full current rows, so only the other source tables are read. Student 1001 last changed in batch 3, which <code>dim_student</code> has already consumed, so it is never read. Changed rows are stamped, so the next table can find them. The delete is logged with the student ids, district and year, because the row no longer exists in <code>dim_student</code>.</p>
+    <div id="v-dk2"></div>
+    <p class="tcap">Enrollment 1002 did not change in gold main, so its own conf row was not in the extract and is read by key. It is dirty because <code>dim_student</code>'s row for student 1002 changed since the last run, and its rebuilt row picks up the new <code>is_special_education</code> value. The enrollment rows are found by joining <code>dim_student</code>'s changed rows to the enrollment conf on the student id (matched against <code>student_unique_id</code>, <code>state_student_id</code> or <code>district_student_id</code>), the district and the year. Enrollment reads <code>student_key</code>, the three ids and <code>is_special_education</code> from <code>dim_student</code>, so a change to another column, such as language, would still make its enrollments dirty. Enrollments for other students are never read.</p>
+
+    <p class="sublabel"><b>Extract Changed Rows from Gold Main</b></p>
+    <p>The gold main extract fetches only the conf rows that were inserted, updated or deleted in the unconsumed batch window.</p>
+    <ul class="slist">
+      <li><b>The window</b> is the gold main batches for the district-year that derived has not yet consumed.</li>
+      <li><b>The rows</b> are the conf rows whose <code>ingestionbatchid</code> is in the window. Because G3 and G4 replace a changed record's whole row set, these rows are the record's complete current data, with no second read needed. The <code>recordflag</code> set by G3 and G4 marks each write as <code>IU</code> (an insert or an update, not told apart) or <code>D</code> (a delete, written as a tombstone).</li>
+    </ul>
+    <p>At the first layer of derived tables, gold main delete tombstones can be used. After that, delete log tables (or in-table tombstones) are required in each table to propagate deletes to downstream tables.</p>
+
+    <!-- Hidden. To show, remove the hidden attribute from this div. -->
     <div hidden>
     <p>A dirty-key refresh needs to know which keys changed in gold main since derived last ran. Gold main records this on every conf row: <code>ingestionbatchid</code>, <code>currentflag</code> and <code>recordflag</code> (<code>IU</code> or <code>D</code>). A delete leaves a tombstone row. This assumes G3 and G4. MERGE and key-slice-replace both use this extract. Recompute does not need it.</p>
     <ol class="slist">
@@ -736,7 +846,7 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
       <li><b>Find the changed keys in each source.</b> For every gold main table a derived table reads, take the keys that have a current row (<code>currentflag = TRUE</code>) with a batch id in the list. Gold main keeps several rows per record when children fan out, and they share one key and one batch id, so a record counts once.</li>
       <li><b>Find the deleted keys.</b> Take the keys that have a tombstone (<code>recordflag = 'D'</code>) in the list and no current row. A key can have more than one tombstone over time, so take the distinct keys. You do not need the latest one. If a key has a current row, it is changed, because gold main only leaves a current row when it is newer than the tombstone.</li>
       <li><b>Map them to derived keys.</b> Each source's keys map to this table's keys through its join. A change in a table that many rows read, such as a school name, dirties all of them. Dirty keys from an upstream derived table are added once that table has refreshed, so they follow the load order.</li>
-      <li><b>Recompute from current rows.</b> For every dirty key, read all of its current rows, not only the rows in the batch list. 13 of the 22 derived tables comment out the <code>currentflag = TRUE</code> filter today, so tombstones and expired versions can reach derived.</li>
+      <li><b>Recompute from current rows.</b> For a key dirty from its own change, the rows in the batch window are already the record's complete current rows (G3 and G4 replace the whole row set), so no second read is needed. A key dirty only through another table has its own rows read by key. 13 of the 22 derived tables comment out the <code>currentflag = TRUE</code> filter today, so tombstones and expired versions can reach derived.</li>
       <li><b>Mark the batches.</b> After the whole run succeeds, record that the batches have been refreshed into derived.</li>
     </ol>
     <div id="v-extract"></div>
@@ -748,73 +858,87 @@ footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);f
     <ul class="slist">
       <li><b>Derived batch status:</b> whether derived records its progress as a new per-batch status in the ingestion tracker or as a separate watermark, and what to call it.</li>
       <li><b>Tracker writes:</b> whether two jobs can safely write the tracker file, which is a CSV in S3.</li>
-      <li><b>Tombstone ordering:</b> step 3 relies on gold main never leaving a current row that is older than a tombstone for the same key. We have not checked that against the data.</li>
+      <li><b>Tombstone ordering:</b> the deleted-keys step relies on gold main never leaving a current row that is older than a tombstone for the same key. We have not checked that against the data.</li>
     </ul>
     </div>
 
-    <h3 class="hsub">4. Refresh Strategy <span class="ptag">Properties 1, 7</span></h3>
+    <p class="sublabel"><b>How a Layer Passes Changes to the Next</b></p>
+    <p>This applies to any table that reads another derived table. The example above shows one such pair.</p>
+    <ul class="slist">
+      <li><b>How a downstream table finds its dirty keys.</b> It joins the upstream table's changed rows, and the upstream table's delete log, to its own source rows on the same join it uses to read the upstream table. This finds rows that never changed in gold main but read something that did.</li>
+      <li><b>What makes the changed rows findable.</b> Each table stamps only the rows it really changes (for example <code>updatetimestamp</code>), and each downstream table remembers the last stamp it consumed from each table it reads. <code>ingestionbatchid</code> is not enough, because a derived row keeps the gold main batch that produced it even when only an enrichment column is updated. More design work is needed to solve this.</li>
+      <li><b>What the delete log must carry.</b> The join columns of the deleted row, because the row no longer exists to look them up. A key that changes counts as a delete of the old key plus an insert of the new one, so downstream rows that matched the old key are still found. Without a delete log, the only way to find orphaned rows is to anti-join the whole downstream table.</li>
+      <li><b>Which upstream changes matter.</b> A downstream table reads only some of an upstream table's columns. A change to a column it does not read still makes its rows dirty, unless the stamp or the log also says which columns changed. The rebuild then produces identical rows, and a compare before writing finds nothing to write.</li>
+    </ul>
+
+    <p class="sublabel" id="rs"><b>Applying the Refresh: Refresh Strategies</b></p>
     <p>A refresh strategy is how one derived table is brought up to date for its dirty keys. It is defined per table, from the table's derived grain and from how a dirty key maps to its derived keys. The Solution by Table section below records the candidate for each table.</p>
     <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:13%"><col style="width:22%"><col style="width:19%"><col style="width:25%"><col style="width:21%"></colgroup><thead><tr><th>Strategy</th><th>Fits</th><th>On update</th><th>On delete</th><th>Cost</th></tr></thead><tbody>
-      <tr><td><b>Recompute</b></td><td>Any grain.</td><td>The whole district-year slice is deleted and rebuilt.</td><td>The rebuilt slice no longer contains the key.</td><td>Every row is rewritten, changed or not. Deleted rows stay until VACUUM.</td></tr>
       <tr><td><b>MERGE</b></td><td>Each dirty key maps to exactly one derived key, and the mapping is stable.</td><td>The matching row is updated, and a new key is inserted.</td><td>Needs an explicit delete branch for keys with no current rows.</td><td>The source must have at most one row per derived key.</td></tr>
       <tr><td><b>Key-slice-replace</b></td><td>A dirty key maps to several derived keys, or to a set that can change between runs.</td><td>The key's rows are deleted and the recomputed rows inserted.</td><td>The key's rows are deleted and nothing is inserted.</td><td>More rows are rewritten than with MERGE. Deleted rows stay until VACUUM.</td></tr>
     </tbody></table></div>
     <ul class="slist">
-      <li><b>Choosing:</b> MERGE fits when a key's derived rows are fixed. Key-slice-replace fits when they can appear or disappear. Recompute is the fallback where a partial refresh is impractical.</li>
+      <li><b>Choosing:</b> MERGE fits when a key's derived rows are fixed. Key-slice-replace fits when they can appear or disappear. A table can also fall back to the full refresh (see Short Term).</li>
       <li><b>Default:</b> gold main chose one expire-and-insert template for every entity, over MERGE for the entities where MERGE could apply, to keep one pattern to build and validate. The same reasoning could favour key-slice-replace as the default for derived, with MERGE as an optimization.</li>
       <li><b>Atomic:</b> each refresh, delete and insert together, runs in one transaction, so a failure cannot leave a table partly written. It reuses the orchestrator transaction support that gold main also needs.</li>
-      <li><b>Rebuild:</b> Recompute is also the rebuild path. A derived-only rebuild of derived and platinum from intact gold main is routine and history-safe, and a rebuild of gold main itself must be followed by one.</li>
+      <li><b>Rebuild:</b> the full refresh (see Short Term) is also the rebuild path. A derived-only rebuild of derived and platinum from intact gold main is routine and history-safe, and a rebuild of gold main itself must be followed by one.</li>
       <li><b>Retire,</b> removing a table or moving its logic into existing ETL, is a per-table decision, not a refresh strategy.</li>
     </ul>
 
-    <p>Open items:</p>
+    <p class="sublabel"><b>What Makes It Harder</b></p>
     <ul class="slist">
-      <li><b>Default mechanism:</b> whether derived uses one template for every table (key-slice-replace, with MERGE as an optimization) or a small set chosen per table.</li>
+      <li><code>fact_student_enrollment</code> computes <code>prior_retention</code> from earlier years, so a change to one year means that student's later rows must be re-evaluated.</li>
+      <li><code>fact_student_program</code> takes rows from four sources by priority, so a delete in the winning source must fall back to the next one.</li>
+      <li>Every table must stamp the rows it changes and log its deletes, and every reader must track its position.</li>
+      <li>Tables that read each other, such as <code>dim_student</code> and <code>fact_student_program</code>.</li>
+      <li>It only fits tables with a clear key and known joins. Complex chains, such as the assessment temp tables and most of platinum, may need to be recomputed.</li>
+      <li>A missed change leaves derived stale with no error, so it usually needs a periodic full rebuild as a safety net.</li>
     </ul>
+
+    <h4 class="hsub4">What We Still Need to Know</h4>
+    <ul class="slist">
+      <li><b>How often data changes.</b> Initial measurement on a handful of silver entities across sd6 and sd28: changes only occurred on 5% to 12% of nights in a two month window, and only a few percent of keys on those nights. Other districts, all entities and a full year are not yet checked.</li>
+      <li><b>Dollar cost of a full run.</b> Not yet measured.</li>
+      <li><b>Expected relative cost of a delta run.</b>Whether fewer keys read less data in Redshift. Tables are partitioned by district, so scattered keys may not reduce the data actually read. Not yet tested. If they do not, coarser refresh approaches can be considered.</li>
+    </ul>
+
     <!-- Hidden for now. To restore, remove the hidden attribute from this div. -->
     <div hidden>
-    <h4 class="hsub4">The Same Change Under Each Strategy</h4>
+    <p><b>The Same Change Under Each Strategy</b></p>
     <p>Example: dirty key A has two derived rows, A1 and A2. Upstream, A1's values change and the source row behind A2 is removed. Key B has one derived row, B1, and does not change.</p>
     <div class="mechgrid" id="mechviz"></div>
     <p class="tcap">Green wires mark rows that are written, red dashed wires mark rows that are deleted, and blue wires mark rows that are left alone. The amber box marks a row that is now out of date.</p>
     </div>
 
-    <h3 class="hsub">5. Delete Handling <span class="ptag">Properties 1, 6</span></h3>
-    <div class="wipnote" role="note"><span class="wipico" aria-hidden="true">&#9888;</span><div><b>This section is in progress!</b> Content is hidden for now.</div></div>
-    <!-- Hidden for now. To restore, remove the hidden attribute from this div and delete the in-progress note above. -->
+    <!-- Hidden for now. To restore, remove the hidden attribute from this div. -->
     <div hidden>
     <p>A delete is the case an append-only load misses entirely. This is its path from silver to gold derived.</p>
     <div id="v-delete"></div>
     <ol class="slist">
       <li>Silver records the delete as a tombstone with the natural keys and the delete's batch id.</li>
       <li>Gold main widens its extract to include the tombstone. It then expires the key's rows (SCD2: <code>currentflag</code> false and <code>effectiveto</code> set) or hard-deletes them (TYPE1 and INCREMENTAL), and inserts one tombstone row with <code>recordflag = D</code>.</li>
-      <li>The extract in section 3 finds a key after the watermark with a tombstone and no current row, so the key is deleted.</li>
+      <li>The Gold Main Extract finds a key after the watermark with a tombstone and no current row, so the key is deleted.</li>
       <li>The refresh recomputes from current rows only and finds none, so the key's derived rows are removed. Recompute and key-slice-replace do this by construction. MERGE needs its explicit delete branch.</li>
       <li>Tables that read this table treat the key as dirty, so the delete cascades along the dependency graph in section 2.</li>
     </ol>
-    <p>A delete only reaches derived if reads exclude tombstones, which is why the current-row filter in section 3 is a prerequisite. A key that is deleted and then re-created ends current, because the current row wins over the earlier tombstone.</p>
+    <p>A delete only reaches derived if reads exclude tombstones, which is why the current-row filter in the Gold Main Extract is a prerequisite. A key that is deleted and then re-created ends current, because the current row wins over the earlier tombstone.</p>
     </div>
     
 
-    <h3 class="hsub">6. Further Analysis</h3>
+    <h3 class="hsub">4. Further Analysis</h3>
     <ul class="slist">
       <li><b>Child fan-out:</b> child attributes are still picked arbitrarily, and a child-only change may or may not reach the derived row, until we decide how child grain is represented (properties 2 and 3).</li>
       <li><b>Platinum:</b> not covered. It reads gold derived and gold main, so it needs the same dirty-key step carried one hop further. A derived-only rebuild already includes platinum. Per-table platinum strategies are open.</li>
       <li><b>DynamoDB-facing views:</b> part of the wider G5 design, not analyzed here.</li>
+      <li><b>SCD Type 2 History:</b> Keeping row-level history for any entities in the derived and platinum layers.</li>
+      <li><b>Dependency Rearchitecture:</b> Reevaluating the purpose of the derived, platinum, and dynamo layers and minimizing the number of hops away from gold main. Simplifying the dependency graphs and building from gold main wherever possible.</li>
     </ul>
   </div>
 
   <div class="hsec" id="sec-gold">
-    <h2>Solution by Table <span class="draft">DRAFT</span></h2>
+    <h2>Solution by Table</h2>
     <p>The proposed natural key, proposed key work and proposed delta mechanism for each of the 22 gold derived tables. A <span class="kchg">Changed</span> marker means the proposed natural key differs from the current driving key. Each key work label links to its explanation under Natural Key Usage or Volatile Keys.</p>
     <div class="tblwrap2"><table class="dsrc inv" id="sbt" style="min-width:1000px"></table></div>
-  </div>
-
-  <!-- Platinum inventory is hidden for now. To restore it, remove the hidden attribute here and on the Platinum link in the "Jump to" line. -->
-  <div class="hsec" id="sec-plat" hidden>
-    <h2>Platinum Inventory & Grain Analysis</h2>
-    <p>All 18 platinum layer tables. These have not been analyzed yet.</p>
-    <div class="tblwrap2"><table class="dsrc inv" id="invp"></table></div>
   </div>
 </div></section>
 <div id="entities"></div>
@@ -2345,6 +2469,7 @@ function buildMini(host,spec){
     var ce=el("div","mcol");
     c.forEach(function(x,i){
       if(x.g!==undefined){ce.appendChild(el("div","grp"+(i>0?" jg":""),esc(x.g)));return;}
+      if(x.brace){var bb=el("div","brace");boxes[x.id]=bb;ce.appendChild(bb);ce.classList.add("hasbrace");return;}
       var h=esc(x.t);
       if(x.s)h+="<small>"+esc(x.s)+"</small>";
       (x.lines||[]).forEach(function(l){h+="<small"+(l.n?' class="new"':"")+">"+(l.n?"+ ":"")+esc(l.t)+"</small>";});
@@ -2844,7 +2969,7 @@ function buildEntity(E){
       add(sec,hc.textContent.trim(),"l2");
       sec.querySelectorAll("h3.hsub").forEach(function(h,i){
         if(h.closest("[hidden]"))return;
-        var c=h.cloneNode(true);c.querySelectorAll(".ptag").forEach(function(x){x.remove();});
+        var c=h.cloneNode(true);c.querySelectorAll(".ptag,.draft").forEach(function(x){x.remove();});
         if(!h.id)h.id=sec.id+"-h"+i;
         add(h,c.textContent.trim(),"l3");
       });
@@ -2907,6 +3032,39 @@ function buildEntity(E){
       [{g:"refresh"},{id:"f1",t:"Recompute A",s:"finds no current rows",c:"jn"}],
       [{g:"gold derived"},{id:"x1",t:"A's derived rows removed",s:"tables that read A are dirty too",c:"more"}]],
       edges:[["s1","g1","j"],["s1","g2","j"],["g2","d1","win"],["d1","f1","win"],["f1","x1","lose"]]});
+    (function(){
+      var h=document.getElementById("v-compare");if(!h)return;
+      var m=el("div","mv cmp");h.appendChild(m);
+      m.appendChild(el("div","vlabel","Example: fact_student_enrollment diff-based full load from source tables"));
+      m.appendChild(el("div","cmphead","<div>1. Build the full result: join and dedup the source tables</div><div>2. Compare with the target on the key</div><div>3. Apply only the differences</div>"));
+      buildMini(m,{cols:[
+        [{id:"t1",t:"fact_student_enrollment_conf",s:"driving table",c:"cnf"},{id:"t2",t:"dim_student",c:"jn"},{id:"t3",t:"dim_education_organization",s:"school and LEA",c:"jn"},{id:"t4",t:"dim_school",c:"jn"},{id:"t5",t:"dim_school_year",c:"jn"},{id:"t6",t:"dim_calendar_date",s:"entry and exit date keys",c:"jn"},{id:"t7",t:"maisa_school_districts",c:"jn"}],
+        [{id:"rh",brace:true},{id:"s1",t:"1001 \u00b7 Lincoln HS \u00b7 2025-08-26",s:"exit date now set"},{id:"s2",t:"1002 \u00b7 Lincoln HS \u00b7 2025-08-26",s:"same values"},{id:"s3",t:"1004 \u00b7 Roosevelt MS \u00b7 2025-10-14",s:"new enrollment"},{id:"d2",t:"\u2026",c:"more dots"}],
+        [{id:"k1",t:"1001 \u00b7 Lincoln HS \u00b7 2025-08-26",s:"values differ: update",c:"p"},{id:"k2",t:"1002 \u00b7 Lincoln HS \u00b7 2025-08-26",s:"identical: skip",m:true},{id:"k3",t:"1003 \u00b7 Roosevelt MS \u00b7 2025-08-26",s:"only in the target: delete",c:"p"},{id:"k4",t:"1004 \u00b7 Roosevelt MS \u00b7 2025-10-14",s:"only in the new result: insert",c:"p"},{id:"d3",t:"\u2026",c:"more dots"}],
+        [{id:"f1",t:"1001",s:"updated",c:"drv"},{id:"f2",t:"1002",s:"untouched",c:"drv"},{id:"f3",t:"1003",s:"deleted",c:"more"},{id:"f4",t:"1004",s:"inserted",c:"drv"},{id:"d4",t:"\u2026",c:"more dots"}]],
+        edges:[["t1","rh","j"],["t2","rh","j"],["t3","rh","j"],["t4","rh","j"],["t5","rh","j"],["t6","rh","j"],["t7","rh","j"],["s1","k1","j"],["s2","k2","j"],["s3","k4","j"],["k1","f1","win"],["k2","f2","j"],["k3","f3","lose"],["k4","f4","win"]]});
+      m.appendChild(el("div","vnote","<b>Simplified here:</b> the rows are illustrative, and only a handful of the district-year's enrollments are drawn (the \u2026 rows stand for the rest). <code>fact_student_enrollment_conf</code> is also read a second time, for <code>prior_retention</code>, which is not drawn."));
+    })();
+    function dkvis(id,label,heads,spec,cls,note){
+      var host=document.getElementById(id);if(!host)return;
+      var m=el("div","mv dk"+(cls?" "+cls:""));host.appendChild(m);
+      m.appendChild(el("div","vlabel",esc(label)));
+      m.appendChild(el("div","cmphead",heads.map(function(x){return "<div>"+esc(x)+"</div>";}).join("")));
+      buildMini(m,spec);
+      if(note)m.appendChild(el("div","vnote","<b>Simplified here:</b> "+note));
+    }
+    var DKH=["1. Find the changed rows","2. Dirty keys","3. Rebuild from current rows","4. Apply, stamp changed rows, log deletes"];
+    dkvis("v-dk1","Example 1: dim_student, which reads gold main directly",["1. Dirty keys come with their full rows. Read the other source tables for those keys","2. Join and rebuild","3. Apply, stamp changed rows, log deletes"],{cols:[
+      [{g:"dirty keys with their full current rows, from the extract"},{id:"c1",t:"student 1002",s:"is_special_education = true \u00b7 IU \u00b7 batch 7",c:"cnf"},{id:"c2",t:"student 1003",s:"tombstone \u00b7 D \u00b7 batch 7",c:"cnf"},{id:"c3",t:"student 1004",s:"new student \u00b7 IU \u00b7 batch 7",c:"cnf"},{id:"c0",t:"student 1001",s:"batch 3 \u00b7 already consumed",c:"cnf",m:true},{id:"cd",t:"\u2026",c:"more dots"},{g:"other source tables, read for these keys"},{id:"t2",t:"fact_student_education_org_assoc",s:"education org association",c:"cnf"},{id:"t3",t:"fact_student_enrollment_conf",c:"cnf"},{id:"t4",t:"dim_education_organization",c:"jn"},{id:"t5",t:"dim_school",c:"jn"},{id:"t6",t:"edfi_gold_alldescriptors_masterdata",s:"descriptors",c:"jn"},{id:"t7",t:"maisa_school_districts",c:"jn"}],
+      [{id:"r1",t:"1002",s:"rebuilt: is_special_education changed"},{id:"r2",t:"1003",s:"no current rows"},{id:"r3",t:"1004",s:"rebuilt: new row"}],
+      [{id:"f1",t:"1002",s:"updated, stamped",c:"drv"},{id:"f2",t:"1003",s:"deleted",c:"more"},{id:"f3",t:"1004",s:"inserted, stamped",c:"drv"},{g:"delete log, read by the next table"},{id:"cr",t:"1003 deleted",s:"student ids, district, year",c:"jn"}]],
+      edges:[["c1","r1","j"],["c2","r2","j"],["c3","r3","j"],["t2","r1","j"],["t2","r3","j"],["t3","r1","j"],["t3","r3","j"],["t4","r1","j"],["t4","r3","j"],["t5","r1","j"],["t5","r3","j"],["t6","r1","j"],["t6","r3","j"],["t7","r1","j"],["t7","r3","j"],["r1","f1","win"],["r2","f2","lose"],["r3","f3","win"]]},"dk3","the rows are illustrative, and only a few of the district-year's students are drawn. Child rows for the same student are collapsed into one row by the dedup. Changes in <code>fact_student_education_org_assoc</code> can also make a student dirty, but only <code>dim_student_conf</code> changes are shown. <code>dim_student</code>'s later statement, which reads fact tables, and its update passes are not shown, nor are the stamp and the consumed position.");
+    dkvis("v-dk2","Example 2: fact_student_enrollment, one step downstream, reads dim_student",DKH,{cols:[
+      [{g:"own gold main changes (ingestionbatch 7), full rows"},{id:"e1",t:"1001 \u00b7 Lincoln HS",s:"2025-08-26 \u00b7 IU \u00b7 exit date set",c:"cnf"},{id:"e2",t:"1003 \u00b7 Roosevelt MS",s:"2025-08-26 \u00b7 D",c:"cnf"},{id:"e3",t:"1004 \u00b7 Roosevelt MS",s:"2025-10-14 \u00b7 IU \u00b7 new",c:"cnf"},{g:"dim_student rows changed since the last run"},{id:"u1",t:"student 1002",s:"is_special_education",c:"jn"},{id:"u3",t:"student 1004",s:"new row",c:"jn"},{g:"dim_student delete log"},{id:"u2",t:"student 1003",s:"deleted",c:"jn"},{g:"excluded for simplicity"},{id:"ot",t:"other source tables",s:"schools, dates, districts",c:"more"}],
+      [{g:"found by joining on student id"},{id:"d1",t:"1001 \u00b7 Lincoln HS",s:"2025-08-26 \u00b7 via enrollment change",c:"p"},{id:"d2",t:"1002 \u00b7 Lincoln HS",s:"2025-08-26 \u00b7 via student 1002 change",c:"p"},{id:"d3",t:"1003 \u00b7 Roosevelt MS",s:"2025-08-26 \u00b7 via enrollment change and via student 1003 change",c:"p"},{id:"d4",t:"1004 \u00b7 Roosevelt MS",s:"2025-10-14 \u00b7 via enrollment change and via student 1004 change",c:"p"},{id:"dd",t:"\u2026",c:"more dots"}],
+      [{g:"rebuilt"},{id:"r1",t:"1001",s:"exit date set"},{id:"r2",t:"1002",s:"own conf row read by key; special-ed flag changed"},{id:"r3",t:"1003",s:"no current rows"},{id:"r4",t:"1004",s:"new row"}],
+      [{g:"applied"},{id:"f1",t:"1001",s:"updated, stamped",c:"drv"},{id:"f2",t:"1002",s:"updated, stamped",c:"drv"},{id:"f3",t:"1003",s:"deleted",c:"more"},{id:"f4",t:"1004",s:"inserted, stamped",c:"drv"},{g:"delete log, read by the next table"},{id:"cr2",t:"1003 deleted",s:"enrollment ids, district, year",c:"jn"}]],
+      edges:[["e1","d1","j"],["u1","d2","j"],["e2","d3","j"],["u2","d3","j"],["e3","d4","j"],["u3","d4","j"],["d1","r1","j"],["d2","r2","j"],["d3","r3","j"],["d4","r4","j"],["r1","f1","win"],["r2","f2","win"],["r3","f3","lose"],["r4","f4","win"]]},"","only the sources that matter here are drawn. <code>fact_student_enrollment</code> also reads <code>dim_education_organization</code>, <code>dim_school</code>, <code>dim_school_year</code>, <code>dim_calendar_date</code> and <code>maisa_school_districts</code>, and changes in them would make enrollments dirty too. Its <code>prior_retention</code> logic would also re-evaluate a student's later years. The rows are illustrative.");
     var h=document.getElementById("v-dag");
     if(h)buildDag(h,{"nodes": [{"id": "dim_date", "level": 0, "pos": 0}, {"id": "dim_school_year", "level": 0, "pos": 1}, {"id": "dim_education_organization", "level": 0, "pos": 2, "posLabel": "#2–#3"}, {"id": "dim_parent", "level": 0, "pos": 10, "note": "same step as dim_staff", "badge": {"t": "", "c": "g"}}, {"id": "dim_section", "level": 0, "pos": 11}, {"id": "fact_discipline_incident", "level": 0, "pos": 16}, {"id": "dim_grade_type", "level": 0, "pos": 35, "note": "currently loaded after fact_grade", "badge": {"t": "1", "c": "o"}}, {"id": "stg_edfi_assessment_base", "level": 0, "pos": 36, "stg": true, "note": "staging step", "badge": {"t": "2", "c": "s"}}, {"id": "dim_student", "level": 1, "pos": 4, "label": "dim_student", "note": "insert, updates 2–6", "split": true, "posLabel": "#4–#9", "badge": {"t": "2", "c": "t"}}, {"id": "dim_staff", "level": 1, "pos": 10, "badge": {"t": "", "c": "g"}}, {"id": "stg_edfi_assessment_scores", "level": 1, "pos": 37, "stg": true, "note": "staging step", "badge": {"t": "2", "c": "s"}}, {"id": "fact_student_enrollment", "level": 2, "pos": 12, "posLabel": "#12–#14"}, {"id": "fact_student_section_enrollment", "level": 2, "pos": 15}, {"id": "fact_discipline_incident_behavior", "level": 2, "pos": 17}, {"id": "fact_discipline_action", "level": 2, "pos": 18}, {"id": "fact_staff_section", "level": 2, "pos": 21}, {"id": "stg_migdl_parent_assessments", "level": 2, "pos": 38, "stg": true, "note": "staging step", "badge": {"t": "2", "c": "s"}}, {"id": "fact_student_school_attendance", "level": 3, "pos": 19}, {"id": "fact_student_parent", "level": 3, "pos": 20}, {"id": "fact_student_program", "level": 3, "pos": 22, "badge": {"t": "2", "c": "t"}}, {"id": "fact_student_academic_record", "level": 3, "pos": 33}, {"id": "fact_grade", "level": 3, "pos": 34, "badge": {"t": "1", "c": "o"}}, {"id": "fact_student_assessment", "level": 3, "pos": 39}, {"id": "stg_migdl_objective_assessments", "level": 3, "pos": 40, "stg": true, "note": "staging step", "badge": {"t": "2", "c": "s"}}, {"id": "dim_student_late", "level": 4, "pos": 23, "label": "dim_student", "note": "update passes 7–16", "split": true, "posLabel": "#23–#32", "badge": {"t": "2", "c": "t"}}, {"id": "fact_student_objective_assessment", "level": 4, "pos": 48}, {"id": "fact_student_section_grade", "level": 4, "pos": 49}], "edges": [["dim_date", "fact_discipline_action"], ["dim_date", "fact_staff_section"], ["dim_date", "fact_student_assessment"], ["dim_date", "fact_student_objective_assessment"], ["dim_date", "fact_student_program"], ["dim_date", "fact_student_school_attendance"], ["dim_education_organization", "dim_staff"], ["dim_education_organization", "dim_student"], ["dim_education_organization", "fact_discipline_action"], ["dim_education_organization", "fact_discipline_incident_behavior"], ["dim_education_organization", "fact_grade"], ["dim_education_organization", "fact_staff_section"], ["dim_education_organization", "fact_student_academic_record"], ["dim_education_organization", "fact_student_assessment"], ["dim_education_organization", "fact_student_enrollment"], ["dim_education_organization", "fact_student_school_attendance"], ["dim_education_organization", "fact_student_section_enrollment"], ["dim_grade_type", "fact_grade"], ["dim_parent", "fact_student_parent"], ["dim_school_year", "fact_discipline_action"], ["dim_school_year", "fact_grade"], ["dim_school_year", "fact_staff_section"], ["dim_school_year", "fact_student_academic_record"], ["dim_school_year", "fact_student_assessment"], ["dim_school_year", "fact_student_enrollment"], ["dim_school_year", "fact_student_objective_assessment"], ["dim_school_year", "fact_student_program"], ["dim_school_year", "fact_student_school_attendance"], ["dim_school_year", "fact_student_section_enrollment"], ["dim_section", "fact_grade"], ["dim_section", "fact_staff_section"], ["dim_section", "fact_student_section_enrollment"], ["dim_section", "fact_student_section_grade"], ["dim_staff", "fact_staff_section"], ["dim_student", "dim_student_late"], ["dim_student", "fact_discipline_action"], ["dim_student", "fact_discipline_incident_behavior"], ["dim_student", "fact_grade"], ["dim_student", "fact_student_academic_record"], ["dim_student", "fact_student_assessment"], ["dim_student", "fact_student_enrollment"], ["dim_student", "fact_student_objective_assessment"], ["dim_student", "fact_student_parent"], ["dim_student", "fact_student_program"], ["dim_student", "fact_student_school_attendance"], ["dim_student", "fact_student_section_enrollment"], ["dim_student", "fact_student_section_grade"], ["fact_discipline_incident", "fact_discipline_action"], ["fact_grade", "fact_student_section_grade"], ["fact_student_assessment", "fact_student_objective_assessment"], ["fact_student_enrollment", "fact_grade"], ["fact_student_enrollment", "fact_student_academic_record"], ["fact_student_enrollment", "fact_student_assessment"], ["fact_student_enrollment", "fact_student_parent"], ["fact_student_enrollment", "fact_student_program"], ["fact_student_program", "dim_student_late"], ["fact_student_section_enrollment", "fact_student_school_attendance"], ["stg_edfi_assessment_base", "stg_edfi_assessment_scores"], ["stg_edfi_assessment_scores", "stg_migdl_objective_assessments"], ["stg_edfi_assessment_scores", "stg_migdl_parent_assessments"], ["stg_migdl_objective_assessments", "fact_student_objective_assessment"], ["stg_migdl_parent_assessments", "fact_student_assessment"], ["stg_migdl_parent_assessments", "stg_migdl_objective_assessments"]]});
   })();
@@ -3033,7 +3191,7 @@ function buildEntity(E){
     return out.length?out.join(""):'<span class="shp" style="--c:transparent">None</span>';
   }
   var sbtEl=document.getElementById("sbt");
-  sbtEl.innerHTML='<colgroup><col style="width:25%"><col style="width:27%"><col style="width:14%"><col style="width:21%"><col style="width:13%"></colgroup><thead><tr><th>Table</th><th>Proposed natural key</th><th>Proposed key work</th><th>Proposed delta mechanism</th><th>Table Details</th></tr></thead><tbody>'+
+  sbtEl.innerHTML='<colgroup><col style="width:25%"><col style="width:27%"><col style="width:14%"><col style="width:21%"><col style="width:13%"></colgroup><thead><tr><th>Table</th><th>Proposed natural key</th><th>Proposed key work</th><th>Proposed dirty key mechanism</th><th>Table Details</th></tr></thead><tbody>'+
     INVENTORY.map(function(r){
       return '<tr><td>'+esc(r[0])+'</td><td class="pk">'+(KEYCHANGES.indexOf(r[0])>=0?'<span class="kchg">Changed</span>':'')+(PK[r[0]]||'')+'</td><td>'+keyWork(r[0])+'</td><td><span class="shp" style="--c:'+stratColor(r[3])+'">'+esc(r[3])+'</span></td><td class="wtc">'+wtLink(r[0])+'</td></tr>';
     }).join("")+'</tbody>';
@@ -3041,10 +3199,6 @@ function buildEntity(E){
     var a=e.target.closest&&e.target.closest("a.kwl");if(!a)return;
     e.preventDefault();var t=document.getElementById(a.getAttribute("data-to"));if(t)t.scrollIntoView({behavior:"smooth",block:"start"});
   });
-
-  /* platinum inventory: names only for now */
-  document.getElementById("invp").innerHTML='<colgroup><col style="width:21%"><col style="width:30%"><col style="width:17%"><col style="width:21%"><col style="width:11%"></colgroup><thead><tr><th>Table</th><th>Driving key</th><th>Build shape</th><th>G5 candidate strategy</th><th>Table Details</th></tr></thead><tbody>'+
-    PLATINUM.map(function(n){return '<tr><td>'+esc(n)+'</td><td></td><td></td><td></td><td></td></tr>';}).join("")+'</tbody>';
 
   /* theme */
   var root=document.documentElement;
