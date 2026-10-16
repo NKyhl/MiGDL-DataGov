@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Platinum Current State Analysis</title>
+<!--
+  Sibling of index.html (gold derived). The stylesheet below is copied from index.html so the two pages match;
+  the rest is specific to platinum. Edit data in the INVENTORY and DAG blocks at the bottom of the file.
+  Findings come from the SQL and the repository only; nothing was checked in data.
+-->
+<style>
+:root{
+  --ground:#F5F7FA;--surface:#FFFFFF;--surface-2:#EBEFF5;--sunk:#E4EAF2;
+  --ink:#0F1720;--ink-2:#37485A;--muted:#586B7F;--faint:#8092A4;
+  --rule:#DBE2EB;--rule-2:#C3CEDB;
+  --accent:#2F5FA8;--accent-ink:#24497F;--accent-wash:#E5EDF8;
+  --bad:#B4231F;--bad-wash:#FBEAE8;--warn:#B45309;--warn-wash:#FDF1E1;--ok:#15803D;--ok-wash:#E4F5EA;
+  --l-silver:#8B97A3;--l-stage:#5B87C4;--l-conf:#D9A400;--l-derived:#B98A00;--l-plat:#8267A8;--l-api:#1F7A6B;--l-temp:#5B87C4;--hl-teal:#0E8C8C;--hl-magenta:#A63A96;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0C1218;--surface:#141D26;--surface-2:#1A252F;--sunk:#0F1922;
+  --ink:#E3EBF3;--ink-2:#BECDDA;--muted:#8496A7;--faint:#647689;
+  --rule:#22303B;--rule-2:#2F404E;
+  --accent:#7BA7E8;--accent-ink:#A5C4F2;--accent-wash:#152740;
+  --bad:#F87171;--bad-wash:#2A1719;--warn:#F0A93B;--warn-wash:#2B2113;--ok:#4ADE80;--ok-wash:#112619;
+  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;--hl-teal:#4CC9C9;--hl-magenta:#E070B8;}}
+:root[data-theme="dark"]{
+  --ground:#0C1218;--surface:#141D26;--surface-2:#1A252F;--sunk:#0F1922;
+  --ink:#E3EBF3;--ink-2:#BECDDA;--muted:#8496A7;--faint:#647689;
+  --rule:#22303B;--rule-2:#2F404E;
+  --accent:#7BA7E8;--accent-ink:#A5C4F2;--accent-wash:#152740;
+  --bad:#F87171;--bad-wash:#2A1719;--warn:#F0A93B;--warn-wash:#2B2113;--ok:#4ADE80;--ok-wash:#112619;
+  --l-silver:#9AA6B2;--l-stage:#7FA9E0;--l-conf:#E8C24A;--l-derived:#D6AC38;--l-plat:#A98FD0;--l-api:#4FBFA8;--l-temp:#7FA9E0;--hl-teal:#4CC9C9;--hl-magenta:#E070B8;}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;margin:0;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h2{font-family:var(--mono);font-size:26px;letter-spacing:-.02em;font-weight:600}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+.lede{color:var(--muted);max-width:100ch;margin:10px 0 0;font-size:16.5px}
+p{margin:10px 0 0;max-width:100ch}
+code{font-family:var(--mono);font-size:.88em}
+a{color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+section{padding:32px 0;border-top:1px solid var(--rule)}
+
+.top{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--ground) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+.top .wrap{display:flex;align-items:center;gap:12px;height:50px;overflow-x:auto;white-space:nowrap}
+.brand{font-family:var(--mono);font-weight:600;font-size:14px}
+.sp{flex:1}
+.btn{font-family:var(--mono);font-size:12px;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-radius:6px;padding:5px 10px;cursor:pointer}
+.btn:hover{background:var(--surface-2)}
+
+.mast{padding:28px 0 0}
+.mast h1{font-family:var(--mono);font-size:clamp(30px,5vw,46px);letter-spacing:-.04em;font-weight:600;line-height:1.05}
+.eidx{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:14px}
+.ecard{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:12px 16px}
+.ecard:hover{border-color:var(--accent);background:var(--accent-wash)}
+.ecard .t{font-family:var(--mono);font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.ecard .lyr{font-size:10px;padding:1px 8px}
+.ecard .s{font-size:13.5px;color:var(--muted);margin-top:3px}
+.ecard.add{border-style:dashed;color:var(--muted)}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--rule-2);background:var(--surface-2);color:var(--ink-2)}
+.pill.accent{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink)}
+
+/* equation */
+.eq{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-top:18px;font-family:var(--mono);font-size:13.5px}
+.eq b{font-size:18px}
+.eq .op{color:var(--faint)}
+.eq .eqlab{font-family:var(--sans);font-size:16px;font-weight:600;color:var(--ink-2);margin-right:8px}
+.eq .st{border-bottom:3px solid var(--c);padding-bottom:1px}
+
+/* diagram */
+.dwrap{margin-top:14px;overflow-x:auto;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+.canvas{position:relative;min-width:1020px;padding:16px 18px 18px}
+svg.wires{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.cols{position:relative;display:grid;grid-template-columns:1.1fr 64px 1.25fr 64px 1.05fr 64px 1.25fr;align-items:start}
+.col{display:flex;flex-direction:column;gap:6px;align-self:stretch;justify-content:flex-start}
+.col.mid{justify-content:flex-start}
+.ch{border-top:4px solid var(--c);padding:6px 0 8px}
+.ch b{font-family:var(--mono);font-size:13px;display:block}
+.ch span{font-size:12px;color:var(--muted);line-height:1.3;display:block}
+.gap{display:flex;justify-content:center;padding-top:8px}
+.gap span{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-align:center;line-height:1.2;background:var(--surface-2);border:1px solid var(--rule);border-radius:999px;padding:2px 7px;height:fit-content}
+.box{position:relative;z-index:1;font-family:var(--mono);font-size:11.5px;line-height:1.3;padding:5px 8px;border:1px solid var(--rule-2);border-radius:6px;background:var(--sunk);color:var(--ink-2);cursor:pointer;transition:opacity .15s;overflow-wrap:anywhere}
+.box small{display:block;color:var(--faint);font-size:10.5px}
+.box.p{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.box.stg{border-left:4px solid var(--l-stage)}
+.box.cnf{border-left:4px solid var(--l-conf)}
+.box.drv{border-left:4px solid var(--l-derived);background:var(--ok-wash);border-color:var(--ok)}
+.box.jn{border-left:4px solid var(--accent)}
+.box.jn.derived{border-left-color:var(--l-derived);border-style:dashed}
+.box.jn.ref{border-left-color:var(--faint)}
+.box.jn.unused{opacity:.55}
+.box.more{cursor:default;border-style:dashed;background:transparent;color:var(--muted)}
+.grp{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin:6px 0 -2px}
+.grp i{font-style:normal;color:var(--ink-2)}
+.grp.jg{margin-top:12px;padding-top:8px;border-top:1px dashed var(--rule-2)}
+.dim{opacity:.14}
+path.w{fill:none;stroke:var(--rule-2);stroke-width:1.2;transition:opacity .15s}
+path.w.s{stroke:var(--l-stage);opacity:.5}
+path.w.c{stroke:var(--l-silver);opacity:.7}
+path.w.f{stroke:var(--l-conf);opacity:.7}
+path.w.j{stroke:var(--accent);opacity:.28}
+path.w.j.seed{opacity:.1}
+path.w.j.seed.on{opacity:1}
+g.emark rect{fill:var(--surface);stroke:var(--ink-2);stroke-width:1}
+g.emark text{fill:var(--ink-2);font:700 9px var(--mono);text-anchor:middle;dominant-baseline:central}
+g.emark.dim{opacity:.15}
+.dleg b.spk{width:auto;height:auto;border-radius:999px;border:1px solid var(--ink-2);background:var(--surface);color:var(--ink-2);font:700 9px/14px var(--mono);padding:0 7px}
+path.w.agg{stroke:var(--l-plat);opacity:.85;stroke-width:1.7}
+path.w.win{stroke:var(--ok);stroke-width:2.2;opacity:.95}
+path.w.lose{stroke:var(--bad);stroke-dasharray:3 3;opacity:.45}
+path.w.on{stroke-width:2.4;opacity:1}
+.note{font-size:14px;color:var(--ink-2);margin-top:12px}
+.note b{color:var(--ink)}
+.why{margin-top:14px;background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--l-derived);border-radius:10px;padding:12px 18px}
+.why .pill.layer{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink);margin-left:4px}
+.why .pill.solved{background:var(--ok-wash);border-color:var(--ok);color:var(--ok);font-weight:600}
+.why .ftags{margin:2px 0 6px}
+.why p.fdesc{margin:6px 0 0;font-size:14px;color:var(--ink-2);max-width:92ch}
+.sqllinks{margin-top:14px;font-size:14px;color:var(--ink-2)}
+.sqllinks.sublinks{margin-top:6px}
+.why h3{font-family:var(--mono);font-size:14px;margin:0 0 6px}
+.why ol{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--ink-2);max-width:92ch}
+.why li{margin:8px 0}
+.why pre{margin:6px 0 0;padding:8px 12px;background:var(--sunk);border:1px solid var(--rule);border-radius:6px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.5;color:var(--ink-2)}
+.subh{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin:40px 0 4px;padding-top:20px;border-top:1px solid var(--rule)}
+.subh.tg{cursor:pointer;border-radius:8px;padding:20px 8px 8px;margin-left:-8px;margin-right:-8px;user-select:none}
+.subh.tg:hover{background:var(--surface-2)}
+.subh .chev{font-family:var(--mono);color:var(--faint);font-size:13px;display:inline-block}
+.subh[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.subh .n{font-family:var(--mono);color:var(--faint);font-size:13px}
+.subh h3{font-family:var(--mono);font-size:19px}
+.subh p{flex-basis:100%;margin:0;color:var(--muted);font-size:14.5px}
+.prop{margin-top:14px}
+.pcard{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:14px 18px;margin-top:14px}
+.pcard h4{font-family:var(--mono);font-size:13.5px;margin:0 0 6px}
+.pcard p{font-size:14px;color:var(--ink-2);margin:6px 0 0;max-width:92ch}
+.etitle{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.lyr{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-left:4px solid var(--c);border-radius:6px;padding:3px 10px}
+.clegend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:10px;font-size:12.5px;color:var(--ink-2)}
+.clegend .lt{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.chip{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--rule-2)}
+.s-conf{background:var(--l-conf)}.s-assoc{background:var(--l-stage)}.s-ref{background:var(--l-silver)}
+.s-edo{background:var(--l-plat)}.s-gen{background:var(--faint)}.s-none{background:transparent;border-style:dashed}
+.csum{font-size:14px;color:var(--ink-2);margin:10px 0 0;max-width:110ch}
+.cwrap{overflow-x:auto;margin-top:12px;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+.ccanvas{position:relative;min-width:900px;padding:14px 16px 16px}
+svg.cwires{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.cgrid2{position:relative;display:grid;grid-template-columns:minmax(0,1.35fr) 120px minmax(0,.7fr);align-items:stretch}
+.ch2{border-top:4px solid var(--rule-2);padding:6px 0 8px}
+.ch2 b{font-family:var(--mono);font-size:13px;display:block}
+.ch2 span{font-size:12px;color:var(--muted)}
+.ctable{display:flex;flex-direction:column}
+.crow2{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:2px 0;padding:3px 8px;border:1px solid var(--rule-2);border-left:4px solid var(--c,var(--rule-2));border-radius:6px;background:var(--sunk);cursor:pointer;transition:opacity .15s}
+.crow2 .cn{font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap}
+.crow2 .src{font-size:11.5px;color:var(--muted);text-align:right;line-height:1.25}
+.crow2.unread .cn{font-weight:500;color:var(--ink-2)}
+.crow2.t-conf{--c:var(--l-conf)}.crow2.t-assoc{--c:var(--l-stage)}.crow2.t-ref{--c:var(--l-silver)}
+.crow2.t-edo{--c:var(--l-plat)}.crow2.t-gen{--c:var(--faint)}
+.crow2.t-none{--c:var(--faint);border-style:dashed;background:transparent}
+.fanpill{font-family:var(--sans);font-weight:500;font-size:10px;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-radius:999px;padding:0 6px;margin-left:4px}
+.cusers{display:flex;flex-direction:column}
+.ulist{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:10px;padding-top:6px}
+.cuser{position:relative;z-index:1;padding:8px 10px;border:1px solid var(--rule-2);border-left:4px solid var(--c);border-radius:8px;background:var(--surface);cursor:pointer;transition:opacity .15s}
+.cuser b{display:block;font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
+.cuser small{display:block;font-size:11px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}
+.cuser.k-api{--c:var(--l-api)}.cuser.k-derived{--c:var(--l-derived)}.cuser.k-platinum{--c:var(--l-plat)}.cuser.k-temp{--c:var(--l-temp)}
+.crow2.dim,.cuser.dim{opacity:.15}
+path.cw{fill:none;stroke-width:1.1;opacity:.32;transition:opacity .15s}
+path.cw.w-api{stroke:var(--l-api)}path.cw.w-derived{stroke:var(--l-derived)}path.cw.w-platinum{stroke:var(--l-plat)}path.cw.w-temp{stroke:var(--l-temp)}
+path.cw.on{stroke-width:2.2;opacity:1}
+path.cw.dim{opacity:.04}
+.cnote{margin-top:12px;font-size:14px;color:var(--ink-2)}
+.back{font-family:var(--mono);font-size:11.5px;text-decoration:none}
+.nsub{color:var(--muted);font-size:14.5px;margin:6px 0 0}
+.ncard{margin-top:18px;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:4px 20px}
+.nrow{display:grid;grid-template-columns:200px minmax(0,1fr);gap:6px 24px;padding:14px 0;border-top:1px solid var(--rule)}
+.nrow:first-child{border-top:0}
+.nkey{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-top:3px}
+.nval{font-size:14.5px;color:var(--ink-2);white-space:pre-line;max-width:100ch;overflow-wrap:anywhere}
+.nval.nstrat{border-left:4px solid var(--c);padding-left:10px;color:var(--ink)}
+.nnone{color:var(--faint)}
+.nval.nbullets{white-space:normal}
+.nbul{margin:0;padding-left:18px}
+.nbul li{margin:4px 0}
+@media(max-width:700px){.nrow{grid-template-columns:1fr}}
+a.wtl.nl{background:var(--surface);border-color:var(--rule-2);color:var(--ink-2)}
+a.wtl.nl:hover{background:var(--surface-2);color:var(--ink);border-color:var(--rule-2)}
+.sfgrid{position:relative;display:grid;grid-template-columns:minmax(0,.95fr) 70px minmax(0,1.55fr) 70px minmax(0,.9fr);align-items:start}
+.ulist2{display:flex;flex-direction:column;gap:8px}
+.sfgrid .crow2{flex-wrap:wrap}
+.sfgrid .crow2 .cn{white-space:normal;overflow-wrap:anywhere;font-size:11.5px}
+.sfgrid .crow2 .src{margin-left:auto}
+.cuser .runno{font-family:var(--mono);color:var(--faint);margin-right:4px}
+.cuser.k-ins{--c:var(--l-derived)}.cuser.k-upd{--c:var(--accent)}.cuser.k-oth{--c:var(--faint);border-style:dashed;background:transparent}
+.crow2.t-derived{--c:var(--l-derived)}
+.s-derived{background:var(--l-derived)}
+path.cw.w-read{stroke:var(--l-stage)}path.cw.w-write{stroke:var(--ok)}
+.sfnotes{margin-top:12px}
+.sfnotes h4,.rnotes h4{font-family:var(--mono);font-size:13.5px;margin:0 0 6px}
+.sfnotes ul{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--ink-2);max-width:78ch}
+.sfnotes li{margin:7px 0}
+.rnotes{margin-top:14px}
+.rnotes table.dsrc{table-layout:fixed;width:100%}
+.rnotes table.dsrc td,.rnotes table.dsrc td:first-child{white-space:normal;overflow-wrap:anywhere;font-family:var(--sans);font-size:13px}
+.rnotes table.dsrc td code{font-size:11.5px}
+.rnotes.rsc{border-left:4px solid var(--accent)}
+.rnotes ol.rsteps{list-style:none;counter-reset:rs;margin:8px 0 0;padding:0;font-size:13.5px;line-height:1.55;color:var(--ink-2);max-width:78ch}
+.rnotes ol.rsteps li{counter-increment:rs;position:relative;margin:0 0 9px;padding-left:34px}
+.rnotes ol.rsteps li::before{content:counter(rs);position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;background:var(--accent-wash);border:1px solid var(--accent);color:var(--accent-ink);font:600 12px/20px var(--mono);text-align:center}
+.mv{margin:10px 0 2px;padding:10px 12px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--surface-2);overflow-x:auto}
+.mv .mcols{position:relative;display:flex;gap:56px;align-items:flex-start;min-width:560px}
+.mv .mcol{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
+.mv .box{cursor:default}
+.mv .box.mut{opacity:.5}
+.mv .box.stk{margin-bottom:9px;box-shadow:0 4px 0 -2px var(--accent-wash),0 4px 0 -1px var(--accent),0 8px 0 -3px var(--accent-wash),0 8px 0 -2px var(--accent)}
+.mv .xn{align-self:flex-start;font-family:var(--mono);font-size:10.5px;color:var(--muted);background:var(--surface);border:1px solid var(--rule);border-radius:999px;padding:2px 8px}
+.mv .xn b{color:var(--ink)}
+.mv .box small.new{color:var(--ink);font-weight:600}
+.mv .grp{margin:0 0 -2px}
+.mv .grp.jg{margin-top:10px}
+.mv path.w.mut{opacity:.22}
+.rnotes .rleg{font-size:13px;color:var(--muted);margin:8px 0 0;max-width:110ch}
+.hsec{margin-top:40px}
+.hsec h2{font-size:22px}
+.mechgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:12px}
+@media (max-width:1000px){.mechgrid{grid-template-columns:1fr}}
+.mech{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:12px 14px}
+.mech h4{font-family:var(--mono);font-size:13.5px;margin:0 0 2px}
+.mech .mv{margin:8px 0 0;padding:8px 10px 10px}
+.mech .mv .mcols{min-width:0;gap:44px}
+.mech p.mnote{font-size:13px;color:var(--ink-2);margin:8px 0 0}
+.mv .box.stale{background:var(--warn-wash);border-color:var(--warn);border-left:4px solid var(--warn);color:var(--ink)}
+.jumps{margin:14px 0 0;font-size:14px;color:var(--muted)}
+.jumps a{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid var(--rule-2)}
+.jumps a:hover{border-bottom-color:var(--accent)}
+.scope{margin-top:14px;padding:2px 14px 4px;background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:10px}
+.scope .hnote{margin:10px 0}
+.wipnote{display:flex;gap:10px;align-items:flex-start;margin:12px 0;padding:10px 14px;background:var(--warn-wash);border:1px solid var(--warn);border-left:4px solid var(--warn);border-radius:8px;font-size:14px;color:var(--ink)}
+.draft{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--warn);background:var(--warn-wash);border:1px solid var(--warn);border-radius:999px;padding:1px 10px;margin-left:-2px;vertical-align:middle}
+.mast h1 .draft{font-size:clamp(14px,2.4vw,22px);padding:5px 18px;letter-spacing:.1em;margin-left:10px;border-width:2px}
+.kchg{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:0 7px;margin-right:6px;vertical-align:1px;white-space:nowrap}
+.vs{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;border:1px solid;border-radius:999px;padding:1px 9px}
+.vs.vol{color:var(--warn);background:var(--warn-wash);border-color:var(--warn)}
+.vs.stb{color:var(--ok);background:var(--ok-wash);border-color:var(--ok)}
+.vs.dep{color:var(--accent-ink);background:var(--accent-wash);border-color:var(--accent);white-space:nowrap}
+.tlabel{margin:18px 0 0;font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tlabel b{font-weight:600}
+.kwrow+.kwrow{margin-top:4px}
+a.kwl{color:inherit;text-decoration:none}
+a.kwl:hover{text-decoration:underline}
+.wipnote .wipico{color:var(--warn);font-size:16px;line-height:1.4}
+.hsec{scroll-margin-top:60px}
+.hsub{scroll-margin-top:66px}
+#navbtn{display:none;padding:5px 9px;font-size:16px;line-height:1}
+@media (max-width:1099px){   /* narrow screens: the side nav becomes a dropdown opened by the hamburger button in the header */
+  #navbtn{display:inline-block}
+  #toc{display:none;position:fixed;top:51px;left:0;right:0;z-index:25;max-height:calc(100vh - 51px);overflow-y:auto;background:var(--ground);border-bottom:1px solid var(--rule);box-shadow:0 10px 24px rgba(0,0,0,.14);padding:10px 20px 16px}
+  body.navopen #toc{display:block}
+  #toc .th{display:none}
+}
+@media (min-width:1100px){
+  .homegrid{--tocw:164px;display:grid;grid-template-columns:var(--tocw) minmax(0,1fr);column-gap:28px}
+  .homegrid>*{grid-column:2;min-width:0}
+  .homegrid>#toc{display:block;grid-column:1;grid-row:1 / span 12;align-self:start;position:sticky;top:66px;max-height:calc(100vh - 82px);overflow-y:auto;margin-top:28px;padding-right:6px}
+}
+#toc .th{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 8px 10px}
+#toc ul{list-style:none;margin:0;padding:0}
+#toc a{display:block;text-decoration:none;color:var(--muted);font-size:12.5px;line-height:1.35;padding:4px 10px;border-left:2px solid var(--rule);margin-left:0}
+#toc a:hover{color:var(--ink);border-left-color:var(--rule-2)}
+#toc a.l2{font-family:var(--mono);font-weight:600;color:var(--ink-2);margin-top:8px}
+#toc a.l3{padding-left:22px}
+#toc a.on{color:var(--accent-ink);border-left-color:var(--accent);background:var(--accent-wash)}
+.ptag{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--muted);margin-left:8px;border:1px solid var(--rule-2);border-radius:999px;padding:1px 8px;vertical-align:middle;white-space:nowrap}
+.slist{margin:8px 0 0;padding-left:22px;font-size:14.5px;color:var(--ink-2);max-width:106ch}
+.slist li{margin:6px 0}
+.hsub4{font-family:var(--mono);font-size:14px;font-weight:600;margin:18px 0 0;scroll-margin-top:66px}
+.ovw .mcols{gap:34px}
+.dag{margin-top:10px;padding:10px 12px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--surface-2);overflow-x:auto}
+.dag .dagcols{position:relative;display:flex;gap:46px;align-items:stretch;min-width:1000px}
+.dag .dagcol{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
+.dag .stgsep{flex:1 1 auto;min-height:18px}
+.dag .box{position:relative}
+.dag .bdg{position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;box-shadow:0 0 0 2px var(--surface-2);z-index:2}
+.dag .bdg.o{background:var(--warn)}
+.dag .bdg.t{background:var(--hl-teal)}
+.dag .bdg.s{background:var(--l-temp)}
+.dag .bdg.g{background:var(--ok)}
+ol.slist.flags{list-style:none;counter-reset:fl;padding-left:32px}
+ol.slist.flags>li{counter-increment:fl;position:relative}
+ol.slist.flags>li::before{content:"";position:absolute;left:-32px;top:1px;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 11px/1 var(--mono);color:var(--ground)}
+ol.slist.flags>li.o::before{background:var(--warn)}
+ol.slist.flags>li.t::before{background:var(--hl-teal)}
+p.noteb{position:relative;padding-left:32px;font-size:14.5px;color:var(--ink-2);margin-top:8px}
+p.noteb::before{content:"";position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:50%}
+p.noteb.g::before{background:var(--ok)}
+ol.slist.flags>li.r::before{background:var(--l-temp)}
+ol.slist.flags>li.m::before{background:var(--hl-magenta)}
+.loadcols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px;max-width:900px}
+.loadcols h5{margin:0 0 6px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+ul.lo{list-style:none;margin:0;padding:0;border:1px solid var(--rule);border-radius:8px;background:var(--surface);overflow:hidden}
+ul.lo li{display:flex;gap:10px;padding:3px 10px;border-bottom:1px solid var(--rule);font-size:13px;line-height:1.4}
+ul.lo li:last-child{border-bottom:0}
+ul.lo .no{flex:none;width:58px;font-family:var(--mono);font-size:11.5px;color:var(--muted);padding-top:1px}
+ul.lo small{color:var(--muted);font-size:11.5px;margin-left:4px}
+ul.lo li.grn{background:var(--ok-wash);box-shadow:inset 3px 0 0 var(--ok)}
+ul.lo li.chg{background:var(--warn-wash);box-shadow:inset 3px 0 0 var(--warn)}
+ul.lo li.stg{background:color-mix(in srgb,var(--l-temp) 12%,var(--surface));box-shadow:inset 3px 0 0 var(--l-temp)}
+ul.lo li.gone{background:color-mix(in srgb,var(--hl-magenta) 12%,var(--surface));box-shadow:inset 3px 0 0 var(--hl-magenta);color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted)}
+ul.lo li.gone small{text-decoration:none;display:inline-block}
+@media (max-width:760px){.loadcols{grid-template-columns:1fr}}
+.dag .box{overflow-wrap:normal}
+.tcap{font-size:13px;color:var(--muted);margin:8px 0 0}
+.tr{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--rule-2);background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.tr.solve{background:var(--ok-wash);border-color:var(--ok);color:var(--ok)}
+.tr.some{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink)}
+.tr.later{border-style:dashed;color:var(--muted)}
+.hsub{font-family:var(--mono);font-size:17px;font-weight:600;margin:26px 0 0;padding-top:18px;border-top:1px solid var(--rule)}
+.hsec h2 + .hsub{margin-top:12px;padding-top:0;border-top:0}
+.h4s{font-family:var(--mono);font-size:13.5px;font-weight:600;margin:20px 0 0;color:var(--ink-2)}
+.hgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:14px}
+.hcard{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:12px 16px}
+.prows{margin-top:14px;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:2px 20px}
+.prows .hcard{display:grid;grid-template-columns:240px minmax(0,1fr);gap:4px 24px;align-items:baseline;background:transparent;border:0;border-top:1px solid var(--rule);border-radius:0;padding:12px 0}
+.prows .hcard:first-child{border-top:0}
+.prows .hcard h4{margin:0}
+.prows .hcard p{margin:0;max-width:100ch}
+@media(max-width:700px){.prows .hcard{grid-template-columns:1fr}}
+.hcard.sbar{border-left:4px solid var(--c)}
+.hcard h4{font-family:var(--mono);font-size:13.5px;margin:0 0 4px}
+.hcard p{font-size:14px;color:var(--ink-2);margin:4px 0 0}
+.tblwrap2{overflow-x:auto;margin-top:10px;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:2px 12px}
+table.inv{table-layout:fixed;width:100%;min-width:980px}
+table.inv td.dk{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);line-height:1.45;overflow-wrap:anywhere}
+table.inv td:first-child{overflow-wrap:anywhere}
+table.inv td.wtc{white-space:nowrap}
+table.inv td.pk{font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.shp{display:inline-block;border-left:4px solid var(--c);padding-left:8px}
+a.wtl{text-decoration:none;font-weight:600;font-size:13px;line-height:1.3;padding:2px 10px}
+a.wtl:hover{background:var(--ok);color:var(--surface);border-color:var(--ok)}
+.brand{color:var(--ink);text-decoration:none}
+.brand:hover{color:var(--accent-ink)}
+[hidden]{display:none!important}
+.exlabel{font-size:13.5px;color:var(--muted);margin-bottom:8px}
+.exlabel b{color:var(--ink-2);font-weight:600}
+.pcard.nested{border:0;border-top:1px solid var(--rule);border-radius:0;padding:14px 0 0;margin-top:14px;background:transparent}
+.pcard ul{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--ink-2);max-width:92ch}
+.pcard ol{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--ink-2);max-width:92ch}
+.pcard ol>li{margin:10px 0}
+.pcard .sub{margin-top:6px;font-size:13.5px}
+.assume{margin-top:8px;background:var(--sunk);border:1px solid var(--rule);border-radius:8px;padding:8px 14px;font-size:13.5px}
+.assume ul{margin:4px 0 0}
+.steps{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:10px;counter-reset:s}
+.step{border:1px solid var(--rule);border-radius:8px;padding:10px 12px;background:var(--sunk);counter-increment:s}
+.step b{display:block;font-family:var(--mono);font-size:12.5px;margin-bottom:3px}
+.step b::before{content:counter(s) " · ";color:var(--faint)}
+.step span{font-size:13px;color:var(--ink-2)}
+.sug{font-size:11px;font-family:var(--mono);color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:0 6px;margin-left:4px;white-space:nowrap}
+table.dsrc{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+table.dsrc th,table.dsrc td{padding:6px 8px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+table.dsrc th{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+table.dsrc td:first-child{font-family:var(--mono);font-size:12px;white-space:nowrap}
+.scbtns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.sclabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);align-self:center;margin-right:4px}
+.mnote{margin:6px 0 0;font-size:13.5px;color:var(--ink-2);max-width:92ch}
+.pnote{margin-top:12px;font-size:13px;color:var(--muted)}
+.sccols{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:8px}
+.sccol{border:1px solid var(--rule);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.sccol.today{border-top:4px solid var(--bad)}
+.sccol.prop2{border-top:4px solid var(--ok)}
+.sccol.bef{border-top:4px solid var(--l-derived)}
+.sccol h5{margin:0 0 6px;font-family:var(--mono);font-size:12px}
+.rs{font-family:var(--mono);font-size:12px;border:1px solid var(--rule-2);border-radius:6px;padding:4px 8px;margin:5px 0;background:var(--sunk)}
+.rs.stale{border-color:var(--l-conf);background:color-mix(in srgb,var(--l-conf) 18%,var(--surface))}
+.rs.new{border-color:var(--ok);background:var(--ok-wash)}
+.rs.gone{opacity:.5;text-decoration:line-through;border-style:dashed}
+.rs small{font-family:var(--sans);color:var(--muted);text-decoration:none;display:inline-block;margin-left:6px}
+.sccol .nt{font-size:12.5px;color:var(--ink-2);margin-top:6px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+
+/* controls */
+.ctl{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.ctl[hidden],.cg[hidden]{display:none}
+.crow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.clabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);min-width:150px}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.preset{font-family:var(--mono);font-size:12px;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-radius:6px;padding:5px 10px;cursor:pointer}
+.preset:hover{background:var(--surface-2)}
+.csep{border-top:1px solid var(--rule)}
+.vizcard{margin-top:10px;border:1px solid var(--rule-2);border-radius:12px;background:var(--surface);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.cpanel{background:var(--surface);border-bottom:1px solid var(--rule-2)}
+.vizcard .dwrap{margin-top:0;border:0;border-radius:0}
+.cphead{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface-2)}
+.cptitle{font-family:var(--mono);font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;margin-right:auto}
+.cpbtn{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--ink-2);background:var(--surface);border:1px solid var(--rule-2);border-radius:8px;padding:5px 12px;cursor:pointer}
+.cpbtn:hover{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink)}
+.cpbtn[aria-expanded="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--accent-ink)}
+.cpicon{display:inline-flex}
+.cpanel .ctl{margin:0;padding:14px 16px;border-top:1px solid var(--rule-2)}
+.ctitle.tgl{cursor:pointer;user-select:none;display:inline-block}
+.ctitle.tgl:hover{color:var(--ink)}
+.ctitle .chev{font-size:11px;color:var(--faint);display:inline-block}
+.ctitle.tgl[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.ctitle{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-top:18px}
+.cgroups{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.cg-t{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin-bottom:5px}
+.cg-t span{text-transform:none;letter-spacing:0;color:var(--faint);margin-left:4px}
+.stp .n small{display:block;font-size:10px;color:var(--faint);line-height:1.2}
+.stp.gc{border-style:dashed;background:var(--surface);margin-left:0}
+.cgroups .steppers{flex:none}
+.steppers{display:flex;flex-wrap:wrap;gap:8px}
+.crow .steppers{flex:1;min-width:0}
+.crow{align-items:flex-start}
+.crow .presets{align-items:center}
+.stp{display:flex;align-items:center;gap:6px;font-size:12px;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:3px 8px}
+.stp .n{font-family:var(--mono)}
+.stp button{width:22px;height:22px;border:1px solid var(--rule-2);background:var(--surface);color:var(--ink);border-radius:5px;cursor:pointer;font-family:var(--mono)}
+.stp button:hover{background:var(--accent-wash)}
+.stp output{min-width:16px;text-align:center;font-family:var(--mono);font-weight:600}
+details.more{margin-top:10px}
+details.more summary{cursor:pointer;font-family:var(--mono);font-size:12.5px;color:var(--ink-2)}
+details.more .steppers{margin-top:8px}
+footer{border-top:1px solid var(--rule);padding:24px 0 50px;color:var(--muted);font-size:13px}
+
+/* platinum page additions */
+.dag .box.plat{border-left:4px solid var(--l-plat)}
+.dag .tgs{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.dag .ctag,.dleg .ctag{display:inline-block;min-width:0;padding:0 6px;font-size:9px;cursor:default}
+.dag .box.stg{border-left:4px solid var(--l-temp)}
+.dag .bdg.m{background:var(--hl-magenta)}
+.dleg{display:flex;flex-wrap:wrap;gap:6px 18px;margin:12px 0 0;font-size:12.5px;color:var(--ink-2)}
+.dleg span{display:inline-flex;align-items:center;gap:6px}
+.dleg i{display:inline-block;width:22px;height:12px;border:1px solid var(--rule-2);border-radius:3px;background:var(--sunk)}
+.dleg i.plat{border-left:4px solid var(--l-plat)}
+.dleg i.stg{border-left:4px solid var(--l-temp)}
+.dleg b{display:inline-block;width:12px;height:12px;border-radius:50%}
+.crumb{font-family:var(--mono);font-size:12px}
+.dag .dagcols.lanes{display:block}
+.dag .lane{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:16px 0 8px;padding-top:8px;border-top:1px solid var(--rule-2)}
+.dag .lanerow{display:grid;column-gap:46px;align-items:start}
+.dag .cell{display:flex;flex-direction:column;gap:8px;min-width:0}
+table.inv td:first-child{white-space:normal;overflow-wrap:normal}
+
+.ctags{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.ctag{display:block;text-align:center;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:0;line-height:1.5;padding:0 2px;border-radius:4px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 22%,var(--surface));color:var(--ink);white-space:nowrap;cursor:help}
+.ctag{min-width:44px}.ctag.p{--c:var(--l-plat)}.ctag.a{--c:var(--l-api)}.ctag.n{--c:var(--bad);background:var(--bad-wash);color:var(--bad)}
+ul.lo li.grp{background:var(--surface-2);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+ul.lo li.grp .no{width:0}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <a class="brand" href="#" title="Back to the top">Platinum Current State Analysis</a>
+  <span class="sp"></span>
+  <button class="btn" id="theme" type="button">Theme</button>
+  <button class="btn" id="navbtn" type="button" aria-label="Open page navigation" aria-expanded="false" aria-controls="toc">&#9776;</button>
+</div></header>
+
+<section id="home" style="border-top:0"><div class="wrap homegrid">
+  <nav id="toc" aria-label="On this page"></nav>
+  <div class="mast">
+    <p class="eyebrow">MiGDL · Delta ETL correctness · Platinum</p>
+    <h1>Platinum Current State Analysis<span class="draft">DRAFT</span></h1>
+    <p class="lede">The platinum layer builds the MiRead, EWIMS, roster and student-detail products from gold. This page analyzes how
+      each of its 18 tables is built today and what it would take to keep them correct as gold changes. It follows the structure of the
+      gold derived analysis and assumes the same upstream fixes (G1&ndash;G4) and gold derived work.
+      Everything here comes from the SQL and the repository; no data was checked.</p>
+  </div>
+
+  <div class="hsec" id="sec-current">
+    <h2>Current State</h2>
+
+    <h3 class="hsub">Table Inventory</h3>
+    <p>All 18 platinum tables, with their current driving key, build shape and consumers. The write pattern shows how a table is loaded today: seed dimensions and most facts insert a key once, four curated tables are written with <code>MERGE</code>, and the EWIMS curated table is rebuilt by a PySpark step. Which platinum tables read each gold derived table is shown in the Consumers row of each table page on the
+      <a href="index.html">gold derived page</a>; the dependencies between platinum tables are in Solution Design below.</p>
+    <div class="tblwrap2"><table class="dsrc inv" id="inv"></table></div>
+    <p class="tcap">* Consumers are the layers that read a table directly: another platinum table or one of its staging tables (PLAT), or the API, which includes the DynamoDB publishers (API). NONE means nothing reads the table. Hover a tag to see which readers.</p>
+
+    <h3 class="hsub">Properties of the Existing ETL</h3>
+    <div class="prows">
+      <div class="hcard"><h4>1. Insert-once loads, with a few UPDATE passes</h4><p>Dimensions and facts load with <code>INSERT &hellip; LEFT JOIN target &hellip; WHERE target.&lt;key&gt; IS NULL</code> (or <code>NOT EXISTS</code>), so a key that already exists is never rewritten. Three facts then run <code>UPDATE</code> passes that overwrite some columns: <code>fact_ewims_student_early_warning</code> (grade statuses and composites), <code>fact_miread_student_assessment</code> (component pivot) and <code>fact_miread_student_assessment_component</code> (component code backfill). Four curated tables use <code>MERGE</code>, which updates matched rows but has no delete branch. Only the EWIMS curated table removes rows that disappeared upstream, because it deletes and reloads its district-year.</p></div>
+      <div class="hcard"><h4>2. Staging is rebuilt in full, then filtered by the guard</h4><p>The 13 prerequisite temp tables and the staging and <code>tmp_*</code> tables inside the load are dropped and recreated for every district-year. The facts they feed insert only keys that are missing, so the work spent recomputing values for existing keys is discarded. The header of <code>stg_edfi_component_src</code> describes its build as a 20 to 30 minute step.</p></div>
+      <div class="hcard"><h4>3. Platinum reads both gold derived and gold conf</h4><p>Most inputs are gold derived tables such as <code>dim_student</code>, <code>dim_staff</code> and <code>fact_student_enrollment</code>. Some steps read conf directly: the Acadience component insert reads <code>fact_student_assessment_conf</code>, EWIMS reads <code>fact_grade_conf</code> and <code>fact_student_school_attendance_conf</code>, and the curated discipline staging reads <code>fact_discipline_incident_conf</code>. A fix in gold derived does not reach those inputs, and a conf delete can reach platinum without passing through derived.</p></div>
+      <div class="hcard"><h4>4. Platinum tables depend on each other and on staging</h4><p>7 of the 11 facts and curated tables read another platinum table, directly or through staging. The MiRead chain is a loop at the table level: the assessment fact feeds the component fact, which feeds a rollup that updates the assessment fact. Load order is the order of the manifest, with prerequisites run first. At least two prerequisites read a dimension that is built after them (see Order and Dependencies).</p></div>
+      <div class="hcard"><h4>5. Guards and keys do not match the columns written</h4><p>Some inserts write a state student or staff id into the <code>student_unique_id</code> or <code>staff_unique_id</code> column, while the guard compares that column to the local id. This is the case for <code>fact_teacher_roster</code> and <code>fact_miread_student_assessment</code>. Where the two ids differ, the guard could fail to match and the row could be inserted again on every run (not checked in data). In <code>fact_miread_student_assessment</code> the two id columns are written swapped: <code>student_unique_id</code> holds the state id and <code>district_student_id</code> holds the local id. The curated discipline key uses the state id in a column also named <code>student_unique_id</code>.</p></div>
+      <div class="hcard"><h4>6. MERGE keys include columns that change</h4><p><code>curated_district_roster</code> and <code>curated_enrollment_history</code> match on dates and a teacher id in addition to the entity keys. If an entry date, exit date or session date changes, the row no longer matches, so the changed row is inserted and the old one stays. <code>curated_enrollment_history</code> and <code>curated_student_discipline</code> compute the match hash on the target table in the <code>ON</code> clause. <code>curated_miread_district_assessment</code> matches on district, school, year and <code>student_assessment_identifier</code> alone, with no student or assessment. In <code>curated_enrollment_history</code>, the update sets <code>student_section_end_date</code> from <code>student_section_begin_date</code>, which looks like a copy error.</p></div>
+      <div class="hcard"><h4>7. Seed dimensions are loaded once and are not scoped</h4><p>The six seed dimensions are built from hardcoded rows. Each insert has a guard on the code columns, so a changed seed value is never applied. Their keys are <code>MD5(code | GETDATE())</code>, so a key differs every time a row is inserted, and the component fact stores these keys. The cross join over <code>maisa_school_districts</code> is not limited to the district being processed, so the first run for any <code>mi_read</code> or <code>mi_ewims</code> district seeds rows for all of them. <code>dim_ewims_status_threshold</code> has no writer, and nothing reads the two EWIMS dimensions that are built.</p></div>
+      <div class="hcard"><h4>8. Run-date and snapshot columns</h4><p><code>fact_miread_student_context</code> stores <code>snapshot_date = CURRENT_DATE</code> with attendance, discipline and contact totals. Because the table is insert-once, those values are frozen at the first run for each student, school and year. <code>fact_teacher_roster.is_current_enrollment</code> and the primary-teacher filter in the context staging use <code>CURRENT_DATE</code>, so the same inputs give a different result on a different day.</p></div>
+      <div class="hcard"><h4>9. Reads are not scoped to the district-year, and years depend on each other</h4><p>Several staging queries read every district or every year: <code>stg_ewims_grade_by_period</code> reads all of <code>fact_grade_conf</code> for every <code>mi_ewims</code> district, the second EWIMS update pass covers every <code>mi_ewims</code> district for the year, the third is limited to neither district nor year, and the discipline aggregates in the curated staging have no district or year filter. The context and enriched tables use all years for retentions and for the history timeline (<code>school_year &lt;= {schlyear}</code>, and a join on <code>student_key</code> alone), so a change in one year affects rows of other years.</p></div>
+      <div class="hcard"><h4>10. Nested JSON built by string concatenation</h4><p>The support-team, discipline, retention, assessments and history JSON are assembled with <code>LISTAGG</code> and string concatenation, capped by <code>rn &lt;= N</code> and, for the support team, cut with <code>LEFT(&hellip;, 2000)</code>. The quote escaping is written as <code>REPLACE(x, '"', '"')</code>, which as written replaces a quote with itself. A long value could be cut mid-object and a name containing a quote could produce invalid JSON (not checked in data).</p></div>
+      <div class="hcard"><h4>11. Per-statement commits and two engines</h4><p>The runner commits after each statement, and the prerequisites commit one at a time. The EWIMS curated table is built afterward by a PySpark step that is called from <code>main.py</code> and is not in the manifest, in its own transaction. A failure partway leaves earlier statements committed, and the district-year is marked <code>PLATINUM LOAD FAILED</code> as a whole. Session temp tables such as <code>#pt_ctx_sd1</code> exist only for the one connection used for the district-year.</p></div>
+    </div>
+
+    <h3 class="hsub">What That Means for Delta Correctness</h3>
+    <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:30%"><col style="width:70%"></colgroup><thead><tr><th>Scenario</th><th>Effect today</th></tr></thead><tbody>
+      <tr><td>First load for a key</td><td>The row is inserted.</td></tr>
+      <tr><td>A gold derived row is updated</td><td>Insert-once facts and dimensions ignore it, because the key exists. Curated <code>MERGE</code> tables update the row if the match key is unchanged.</td></tr>
+      <tr><td>A gold derived row is deleted</td><td>The platinum row stays. No <code>MERGE</code> has a delete branch, and the insert-once tables never remove keys. The EWIMS curated table drops it on its next reload only if the fact row is gone, which the fact never does.</td></tr>
+      <tr><td>A date or teacher in a <code>MERGE</code> key changes</td><td>No match, so a new row is inserted and the old row stays, giving two rows for the same enrollment or roster entry.</td></tr>
+      <tr><td>Late attendance or discipline for an EWIMS student</td><td>The attendance and discipline columns keep the first values. The grade update pass then recomputes composite status from those stale flags.</td></tr>
+      <tr><td>A seed value changes (for example a proficiency range)</td><td>Existing rows keep the old value, because the guard matches on the code.</td></tr>
+      <tr><td>A student or staff member is removed in a later year</td><td>Context, enriched and roster rows from earlier loads remain. History blobs for other years are not recomputed by a run for one year.</td></tr>
+      <tr><td>The same load is run on a later day</td><td>Context rows keep the first <code>snapshot_date</code> and totals. The roster's <code>is_current_enrollment</code> is frozen at insert.</td></tr>
+      <tr><td>The same load is run again with no change</td><td>Tables whose guard column does not match the written column (property 5) could insert duplicate rows (not checked in data).</td></tr>
+    </tbody></table></div>
+  </div>
+
+  <div class="hsec" id="sec-mech">
+    <h2>Solution Design</h2>
+    <p>This section covers load order and dependencies (property 4). The other properties are not analyzed yet; the Approach table below shows the status of each.</p>
+
+    <p>The numbers are the property numbers above. Only the load order has been analyzed so far.</p>
+    <div class="tblwrap2"><table class="dsrc"><colgroup><col style="width:46%"><col style="width:24%"><col style="width:30%"></colgroup><thead><tr><th>Property</th><th>Status</th><th>Where</th></tr></thead><tbody>
+      <tr><td>1. Insert-once loads, with a few UPDATE passes</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+      <tr><td>2. Staging is rebuilt in full, then filtered by the guard</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+      <tr><td>3. Platinum reads both gold derived and gold conf</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+      <tr><td>4. Platinum tables depend on each other and on staging</td><td><span class="tr solve">Analyzed</span></td><td>1. Order and Dependencies</td></tr>
+      <tr><td>5. Guards and keys do not match the columns written</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+      <tr><td>6. MERGE keys include columns that change</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+      <tr><td>7. Seed dimensions are loaded once and are not scoped</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+      <tr><td>8. Run-date and snapshot columns</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+      <tr><td>9. Reads are not scoped to the district-year, and years depend on each other</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+      <tr><td>10. Nested JSON built by string concatenation</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+      <tr><td>11. Per-statement commits and two engines</td><td><span class="tr later">Not analyzed yet</span></td><td></td></tr>
+    </tbody></table></div>
+
+    <h3 class="hsub">1. Order and Dependencies <span class="ptag">Property 4</span></h3>
+    <p>A platinum table must load after the platinum tables and staging tables it reads, and a change to a table reaches everything downstream of it. Platinum reads gold derived tables as well, and those must be loaded first, as they are today.</p>
+    <h4 class="hsub4">Table Dependency Analysis</h4>
+    <p>The graph below shows the read dependencies between platinum tables and the staging tables in the platinum load, taken from the SQL. Each box shows where the table runs today: <b>P0&ndash;P12</b> are the prerequisites that run before everything else, and <b>#0&ndash;#36</b> are the manifest steps. Tables with a colored dot have a note below. Hover over a table to trace what it reads and what reads it.</p>
+    <div id="v-dag"></div>
+    <div class="dleg">
+      <span><i class="plat"></i>platinum table</span>
+      <span><i class="stg"></i>staging temp table</span>
+      <span><span class="ctag a">API</span>read by the API or a DynamoDB publisher</span>
+      <span><b class="spk">Spark</b>PySpark step between two tables</span>
+    </div>
+    <p class="tcap">Each column is one layer of a topological sort. Tables in a layer can load in any order, and every layer follows the one before it. Gold derived inputs are not drawn. No table in one product (MiRead, EWIMS, roster, student detail) reads a table in another product.</p>
+
+    <p>The order today is valid except in the places below. Each note is marked with a colored dot in the graph.</p>
+    <ol class="slist flags">
+      <li class="o"><b><code>stg_miread_component_patterns</code> and <code>stg_miread_component_key</code></b> are prerequisites, so they run before step #0, but both read <code>dim_miread_literacy_component</code>, which step #0 writes. On the first run for an environment the dimension is still empty when they build, so the component mapping would be empty for that run. After that they read rows seeded by an earlier run. The six seed dimensions read only <code>maisa_school_districts</code>, so they can load first.</li>
+      <li class="t"><b><code>fact_miread_student_assessment</code></b> is read by the component fact, whose rollup then updates it, which looks like a cycle between tables. It is not a cycle between statements: the insert (#13) reads no component data, and the rollup update (#20) reads the component fact. Splitting the table into two nodes, as in the graph, removes the cycle. It also shows that only <code>stg_miread_district_assessment</code> needs the update: <code>pt_ctx_sd1</code>, <code>tmp_assessments_json</code> and the component staging read only columns written at insert.</li>
+      <li class="r"><b><code>stg_edfi_assessment_base</code>, <code>stg_edfi_assessment_scores</code>, <code>stg_migdl_parent_assessments</code> and <code>stg_migdl_objective_assessments</code></b> are also built in the gold derived load, where they feed <code>fact_student_assessment</code> and <code>fact_student_objective_assessment</code>. Platinum builds them again, because they only live for the connection. Marked with a blue dot.</li>
+      <li class="m"><b><code>stg_nwea_performance_level_lookup</code></b> has no reader in the platinum SQL, so its build is wasted compute. The two EWIMS dimensions also have no readers. <code>noop_018.sql</code> and <code>diagnostic_022.sql</code> are skipped by the runner and can be removed from the manifest.</li>
+    </ol>
+    <p>Smaller notes: <code>tmp_enrollments_json</code> begins by dropping <code>tmp_components_json</code>, which is harmless today only because <code>tmp_assessments_json</code> has already read it. The EWIMS curated step is hardcoded in <code>main.py</code> after all SQL, so it is outside the manifest and its position relative to the fact is not visible there. <code>dim_ewims_status_threshold</code> is not in the graph because nothing writes or reads it.</p>
+    <p>Dirty keys should follow the same edges. <code>fact_miread_student_assessment</code> and its component fact have the most readers, so a change to them reaches the most tables: the context chain, both MiRead curated tables and the rollup.</p>
+
+    <h4 class="hsub4">Proposed Solution</h4>
+    <p>Load the six seed dimensions first, so the two component prerequisites always read a built dimension. Group the rest by product, which is possible because no product reads another. Give each table one position, with multi-statement tables as one entry (<code>fact_miread_student_assessment</code> keeps two because of the split above). Remove the staging table with no reader and the two entries that never run.</p>
+    <div class="loadcols">
+      <div>
+        <h5>Existing load order</h5>
+        <ul class="lo">
+        <li class="stg"><span class="no">P0</span><span><code>stg_edfi_assessment_base</code> <small>prereq, staging</small></span></li>
+        <li class="stg"><span class="no">P1</span><span><code>stg_edfi_assessment_scores</code> <small>prereq, staging</small></span></li>
+        <li class="stg"><span class="no">P2</span><span><code>stg_migdl_parent_assessments</code> <small>prereq, staging</small></span></li>
+        <li class="stg"><span class="no">P3</span><span><code>stg_migdl_objective_assessments</code> <small>prereq, staging</small></span></li>
+        <li class="stg"><span class="no">P4</span><span><code>stg_acadience_objective_component_map</code> <small>prereq, staging</small></span></li>
+        <li class="stg"><span class="no">P5</span><span><code>stg_nwea_grade_objective_map</code> <small>prereq, staging</small></span></li>
+        <li class="chg"><span class="no">P6</span><span><code>stg_miread_component_patterns</code> <small>prereq, reads a dim built at #0</small></span></li>
+        <li class="stg"><span class="no">P7</span><span><code>stg_star_objective_component_map</code> <small>prereq, staging</small></span></li>
+        <li class="gone"><span class="no">P8</span><span><code>stg_nwea_performance_level_lookup</code> <small>prereq, no readers</small></span></li>
+        <li class="chg"><span class="no">P9</span><span><code>stg_miread_component_key</code> <small>prereq, reads a dim built at #0</small></span></li>
+        <li class="stg"><span class="no">P10</span><span><code>stg_miread_foa_join</code> <small>prereq, staging</small></span></li>
+        <li class="stg"><span class="no">P11</span><span><code>stg_curated_enrollment_history</code> <small>prereq, staging</small></span></li>
+        <li class="stg"><span class="no">P12</span><span><code>stg_curated_student_discipline</code> <small>prereq, staging</small></span></li>
+        <li class=""><span class="no">#0</span><span><code>dim_miread_literacy_component</code></span></li>
+        <li class=""><span class="no">#1</span><span><code>dim_miread_assessment_vendor</code></span></li>
+        <li class=""><span class="no">#2</span><span><code>dim_miread_assessment_period</code></span></li>
+        <li class=""><span class="no">#3</span><span><code>dim_miread_proficiency_level</code></span></li>
+        <li class=""><span class="no">#4</span><span><code>dim_ewims_indicator_domain</code></span></li>
+        <li class=""><span class="no">#5</span><span><code>dim_ewims_time_period_type</code></span></li>
+        <li class=""><span class="no">#6</span><span><code>fact_ewims_student_early_warning</code> <small>insert</small></span></li>
+        <li class="stg"><span class="no">#7</span><span><code>stg_ewims_grade_by_period</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#8</span><span><code>stg_ewims_grade_year</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#9–#10</span><span><code>fact_ewims_student_early_warning</code> <small>2 update passes</small></span></li>
+        <li class=""><span class="no">#11</span><span><code>fact_teacher_roster</code></span></li>
+        <li class="stg"><span class="no">#12</span><span><code>stg_migdl_miread_student_assessment</code> <small>staging</small></span></li>
+        <li class="grn"><span class="no">#13</span><span><code>fact_miread_student_assessment</code> <small>insert</small></span></li>
+        <li class="stg"><span class="no">#14</span><span><code>stg_edfi_component_src</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#15–#17</span><span><code>fact_miread_student_assessment_component</code> <small>3 statements</small></span></li>
+        <li class="gone"><span class="no">#18</span><span><code>noop_018</code> <small>noop, skipped</small></span></li>
+        <li class="stg"><span class="no">#19</span><span><code>stg_edfi_component_rollup</code> <small>staging</small></span></li>
+        <li class="grn"><span class="no">#20</span><span><code>fact_miread_student_assessment</code> <small>rollup update</small></span></li>
+        <li class="stg"><span class="no">#21</span><span><code>pt_ctx_sd1</code> <small>session temp table</small></span></li>
+        <li class="gone"><span class="no">#22</span><span><code>diagnostic_022</code> <small>diagnostic, skipped</small></span></li>
+        <li class=""><span class="no">#23</span><span><code>fact_miread_student_context</code></span></li>
+        <li class="stg"><span class="no">#24–#30</span><span><code>tmp_discipline_json … tmp_history_timeline_json</code> <small>7 staging steps</small></span></li>
+        <li class=""><span class="no">#31</span><span><code>fact_miread_student_context_enriched</code></span></li>
+        <li class=""><span class="no">#32</span><span><code>curated_district_roster</code></span></li>
+        <li class=""><span class="no">#33</span><span><code>curated_student_discipline</code></span></li>
+        <li class=""><span class="no">#34</span><span><code>curated_enrollment_history</code></span></li>
+        <li class="stg"><span class="no">#35</span><span><code>stg_miread_district_assessment</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#36</span><span><code>curated_miread_district_assessment</code></span></li>
+        <li class="stg"><span class="no">after</span><span><code>curated_ewims_student_early_warn_incidents_actions</code> <small>PySpark, called from main.py</small></span></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Proposed load order</h5>
+        <ul class="lo">
+        <li class="grp"><span class="no"></span><span><b>Seed dimensions</b></span></li>
+        <li class="chg"><span class="no">#0</span><span><code>dim_miread_literacy_component</code></span></li>
+        <li class="chg"><span class="no">#1</span><span><code>dim_miread_assessment_vendor</code></span></li>
+        <li class="chg"><span class="no">#2</span><span><code>dim_miread_assessment_period</code></span></li>
+        <li class="chg"><span class="no">#3</span><span><code>dim_miread_proficiency_level</code></span></li>
+        <li class="chg"><span class="no">#4</span><span><code>dim_ewims_indicator_domain</code></span></li>
+        <li class="chg"><span class="no">#5</span><span><code>dim_ewims_time_period_type</code></span></li>
+        <li class="grp"><span class="no"></span><span><b>MiRead</b></span></li>
+        <li class="stg"><span class="no">#6</span><span><code>stg_edfi_assessment_base</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#7</span><span><code>stg_edfi_assessment_scores</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#8</span><span><code>stg_migdl_parent_assessments</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#9</span><span><code>stg_migdl_objective_assessments</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#10</span><span><code>stg_acadience_objective_component_map</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#11</span><span><code>stg_nwea_grade_objective_map</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#12</span><span><code>stg_star_objective_component_map</code> <small>staging</small></span></li>
+        <li class="chg"><span class="no">#13</span><span><code>stg_miread_component_patterns</code> <small>staging, now after the literacy dim</small></span></li>
+        <li class="chg"><span class="no">#14</span><span><code>stg_miread_component_key</code> <small>staging, now after the literacy dim</small></span></li>
+        <li class="stg"><span class="no">#15</span><span><code>stg_miread_foa_join</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#16</span><span><code>stg_migdl_miread_student_assessment</code> <small>staging</small></span></li>
+        <li class="grn"><span class="no">#17</span><span><code>fact_miread_student_assessment</code> <small>insert</small></span></li>
+        <li class="stg"><span class="no">#18</span><span><code>stg_edfi_component_src</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#19</span><span><code>fact_miread_student_assessment_component</code> <small>3 statements</small></span></li>
+        <li class="stg"><span class="no">#20</span><span><code>stg_edfi_component_rollup</code> <small>staging</small></span></li>
+        <li class="grn"><span class="no">#21</span><span><code>fact_miread_student_assessment</code> <small>rollup update</small></span></li>
+        <li class="stg"><span class="no">#22</span><span><code>pt_ctx_sd1</code> <small>session temp table</small></span></li>
+        <li class=""><span class="no">#23</span><span><code>fact_miread_student_context</code></span></li>
+        <li class="stg"><span class="no">#24</span><span><code>tmp_discipline_json … tmp_history_timeline_json</code> <small>7 staging steps, internal order unchanged</small></span></li>
+        <li class=""><span class="no">#25</span><span><code>fact_miread_student_context_enriched</code></span></li>
+        <li class="stg"><span class="no">#26</span><span><code>stg_miread_district_assessment</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#27</span><span><code>curated_miread_district_assessment</code></span></li>
+        <li class="grp"><span class="no"></span><span><b>EWIMS</b></span></li>
+        <li class="stg"><span class="no">#28</span><span><code>stg_ewims_grade_by_period</code> <small>staging</small></span></li>
+        <li class="stg"><span class="no">#29</span><span><code>stg_ewims_grade_year</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#30</span><span><code>fact_ewims_student_early_warning</code> <small>insert and 2 update passes</small></span></li>
+        <li class="stg"><span class="no">#31</span><span><code>curated_ewims_student_early_warn_incidents_actions</code> <small>PySpark</small></span></li>
+        <li class="grp"><span class="no"></span><span><b>Roster</b></span></li>
+        <li class=""><span class="no">#32</span><span><code>fact_teacher_roster</code></span></li>
+        <li class=""><span class="no">#33</span><span><code>curated_district_roster</code></span></li>
+        <li class="grp"><span class="no"></span><span><b>Student detail</b></span></li>
+        <li class="stg"><span class="no">#34</span><span><code>stg_curated_enrollment_history</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#35</span><span><code>curated_enrollment_history</code></span></li>
+        <li class="stg"><span class="no">#36</span><span><code>stg_curated_student_discipline</code> <small>staging</small></span></li>
+        <li class=""><span class="no">#37</span><span><code>curated_student_discipline</code></span></li>
+        <li class="gone"><span class="no">out</span><span><code>stg_nwea_performance_level_lookup</code> <small>no readers</small></span></li>
+        <li class="gone"><span class="no">out</span><span><code>noop_018</code>, <code>diagnostic_022</code> <small>never run</small></span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="tcap">Existing numbers are positions in <code>platinum.yaml</code>: P is the <code>prereqs</code> list and # is <code>statements</code>, both counted from 0. The proposed list is a sequence, not a manifest index. Green marks the table that is split in two; yellow marks entries that move.</p>
+
+    <p>Open items:</p>
+    <ul class="slist">
+      <li><b>Where do prerequisites run?</b> They run up front today. Placing each staging table beside its consumer (as proposed) shortens how long it holds session memory, but the temp tables <code>stg_*</code> that gold derived also builds could instead become permanent tables, the same open item as on the gold derived page.</li>
+      <li><b>Should the EWIMS Spark step be a manifest entry?</b> It runs after all SQL from <code>main.py</code> and in its own transaction. Putting it in the manifest would make its dependency on <code>fact_ewims_student_early_warning</code> visible and let a district-year run one product at a time.</li>
+      <li><b>Do the two EWIMS dimensions and <code>dim_ewims_status_threshold</code> have consumers?</b> Nothing in this repository reads the first two, and nothing writes the third. Open: whether anything outside the lake and API uses them, or whether they should be retired.</li>
+      <li><b>Do the platinum facts have consumers beyond the curated tables?</b> Not through the live routes. The routers call only the v2 handlers, which read the curated tables, and <code>fact_miread_student_context_enriched</code> for <code>/miread/student/context</code>. The Redshift grants for the API roles match this. The older handlers (<code>roster.py</code>, <code>roster_v1.py</code>, <code>district_assessment.py</code>, <code>student_context_v2.py</code>) read <code>fact_teacher_roster</code> and the MiRead facts but are not routed, and the API spec (2.2.2) still describes some routes as returning columns from those facts. Open: whether anything outside this repository reads the facts directly, and whether the unused handlers and the stale spec text should be removed.</li>
+    </ul>
+  </div>
+
+  <footer><div>Source: <code>amorphic-cicd/etl/edfi_gold_platinum/</code> (manifests, <code>sql/platinum</code>, <code>sql/temp_tables</code>, <code>core/ewims_curated.py</code>) and the lineage reference. Platinum SQL and manifests unchanged through commit <code>fa1b312</code> (dev, 12 Oct 2026); last changed at <code>8f756e3</code>. Styles are copied from <code>index.html</code>.</div></footer>
+</div></section>
+
+<script>
+(function(){
+"use strict";
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
+
+var INVENTORY=[["curated_district_roster", "district_id, school_id, school_year, staff_unique_id, district_student_id, section_identifier, course_code, session_name, plus session dates, entry_date, exit_date, exit_date_key", "Wide denormalization of fact_teacher_roster with 6 gold joins", "MERGE"], ["curated_enrollment_history", "MD5 of district_id, school_id, school_year, student_unique_id, section_identifier, session_name, course_code, teacher_district_staff_id, session dates, entry_date, exit_date", "Student enrollment × section × teacher fan-out; enrollments with no staff-section row are dropped", "MERGE on a hash of target columns"], ["curated_ewims_student_early_warn_incidents_actions", "student_ew_key (district_id, school_year, student, timeframe), one row per fact_ewims row", "1:1 with fact_ewims_student_early_warning plus a nested array of incidents and actions", "Delete the district-year, then COPY (PySpark)"], ["curated_miread_district_assessment", "district_id, school_id, school_year, student_assessment_identifier", "1:1 with fact_miread_student_assessment; objectives and components added as JSON", "MERGE"], ["curated_student_discipline", "schooldistrictid, school_year, student_unique_id (holds the state id), discipline_incident_behavior_key, fact_discipline_action_key ('none' when absent)", "Behavior × action rows with 4 aggregate CTEs", "MERGE on a hash of target columns"], ["dim_ewims_indicator_domain", "domain_code, schooldistrictid", "Hardcoded seed rows × every mi_ewims district", "Insert-once"], ["dim_ewims_status_threshold", "None defined (DDL has threshold_key)", "No builder found: not in the manifest, core, or the Spark module", "No writer"], ["dim_ewims_time_period_type", "time_period_type_code, schooldistrictid", "Hardcoded seed rows × every mi_ewims district", "Insert-once"], ["dim_miread_assessment_period", "assessment_period_code, schooldistrictid", "Hardcoded seed rows × every mi_read district", "Insert-once"], ["dim_miread_assessment_vendor", "vendor_code, schooldistrictid", "Hardcoded seed rows × every mi_read district", "Insert-once"], ["dim_miread_literacy_component", "component_code (no district column)", "Hardcoded seed rows, global", "Insert-once"], ["dim_miread_proficiency_level", "proficiency_level_code, schooldistrictid", "Hardcoded seed rows × every mi_read district", "Insert-once"], ["fact_ewims_student_early_warning", "student_unique_id, school_year, schooldistrictid, time_period_type, time_period_label", "1:N timeframe fan-out (year, grading period, month, week), then 2 UPDATE passes for grades and composites", "Insert-once, then UPDATE passes"], ["fact_miread_student_assessment", "student_unique_id, student_assessment_identifier, administration_date, schooldistrictid, school_year", "1:1 with gold fact_student_assessment; an UPDATE then pivots the component rollup into 18 columns", "Insert-once, then UPDATE pass"], ["fact_miread_student_assessment_component", "miread_assessment_key, objective code, component_key, vendor_key, assessment_period_key, school_year, schooldistrictid", "Three writers: staged insert, UPDATE that backfills component_code, and an Acadience-only insert from conf", "Insert-once, then UPDATE pass"], ["fact_miread_student_context", "student_context_key = MD5(student_key, school_key, school_year)", "Wide snapshot: ~13 aggregate CTEs joined on student_key, one row per student per active enrollment", "Insert-once"], ["fact_miread_student_context_enriched", "student_unique_id, schooldistrictid, school_year", "1:1 with context, plus dim_student attributes and 3 JSON blobs", "Insert-once"], ["fact_teacher_roster", "staff_unique_id, student_unique_id, section_key, school_year, schooldistrictid", "1:1 enrichment of student-section enrollment, one row kept per key", "Insert-once"]];
+var DAG={"nodes": [{"id": "dim_lit", "label": "dim_miread_literacy_component", "posLabel": "#0", "kind": "plat", "note": "", "grp": 0, "stg": false}, {"id": "dim_vendor", "label": "dim_miread_assessment_vendor", "posLabel": "#1", "kind": "plat", "note": "", "grp": 0, "stg": false}, {"id": "dim_period", "label": "dim_miread_assessment_period", "posLabel": "#2", "kind": "plat", "note": "", "grp": 0, "stg": false}, {"id": "dim_prof", "label": "dim_miread_proficiency_level", "posLabel": "#3", "kind": "plat", "note": "", "grp": 0, "stg": false}, {"id": "dim_ewd", "label": "dim_ewims_indicator_domain", "posLabel": "#4", "kind": "plat", "note": "no readers", "grp": 0, "stg": false}, {"id": "dim_ewt", "label": "dim_ewims_time_period_type", "posLabel": "#5", "kind": "plat", "note": "no readers", "grp": 0, "stg": false}, {"id": "p_base", "label": "stg_edfi_assessment_base", "posLabel": "P0", "kind": "stg", "note": "", "grp": 1, "badge": {"c": "s"}, "stg": true}, {"id": "p_scores", "label": "stg_edfi_assessment_scores", "posLabel": "P1", "kind": "stg", "note": "", "grp": 1, "badge": {"c": "s"}, "stg": true}, {"id": "p_parent", "label": "stg_migdl_parent_assessments", "posLabel": "P2", "kind": "stg", "note": "", "grp": 1, "badge": {"c": "s"}, "stg": true}, {"id": "p_obj", "label": "stg_migdl_objective_assessments", "posLabel": "P3", "kind": "stg", "note": "", "grp": 1, "badge": {"c": "s"}, "stg": true}, {"id": "p_acad", "label": "stg_acadience_objective_component_map", "posLabel": "P4", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "p_nwea", "label": "stg_nwea_grade_objective_map", "posLabel": "P5", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "p_pat", "label": "stg_miread_component_patterns", "posLabel": "P6", "kind": "stg", "note": "", "grp": 1, "badge": {"c": "o"}, "stg": true}, {"id": "p_star", "label": "stg_star_objective_component_map", "posLabel": "P7", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "p_nwealvl", "label": "stg_nwea_performance_level_lookup", "posLabel": "P8", "kind": "stg", "note": "no readers", "grp": 1, "badge": {"c": "m"}, "stg": true}, {"id": "p_ckey", "label": "stg_miread_component_key", "posLabel": "P9", "kind": "stg", "note": "", "grp": 1, "badge": {"c": "o"}, "stg": true}, {"id": "p_foa", "label": "stg_miread_foa_join", "posLabel": "P10", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "p_enr", "label": "stg_curated_enrollment_history", "posLabel": "P11", "kind": "stg", "note": "", "grp": 4, "stg": true}, {"id": "p_disc", "label": "stg_curated_student_discipline", "posLabel": "P12", "kind": "stg", "note": "", "grp": 4, "stg": true}, {"id": "f_ew", "label": "fact_ewims_student_early_warning", "posLabel": "#6, #9–#10", "kind": "plat", "note": "insert + 2 updates", "grp": 2, "stg": false}, {"id": "st_ewgp", "label": "stg_ewims_grade_by_period", "posLabel": "#7", "kind": "stg", "note": "", "grp": 2, "stg": true}, {"id": "st_ewgy", "label": "stg_ewims_grade_year", "posLabel": "#8", "kind": "stg", "note": "", "grp": 2, "stg": true}, {"id": "c_ew", "label": "curated_ewims_student_early_warn_incidents_actions", "posLabel": "after #36", "kind": "spark", "note": "PySpark, hardcoded in main.py", "grp": 2, "stg": false}, {"id": "f_roster", "label": "fact_teacher_roster", "posLabel": "#11", "kind": "plat", "note": "", "grp": 3, "stg": false}, {"id": "c_roster", "label": "curated_district_roster", "posLabel": "#32", "kind": "cur", "note": "", "grp": 3, "stg": false}, {"id": "st_mras", "label": "stg_migdl_miread_student_assessment", "posLabel": "#12", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "f_mra_ins", "label": "fact_miread_student_assessment", "posLabel": "#13", "kind": "plat", "note": "insert", "grp": 1, "badge": {"c": "t"}, "stg": false}, {"id": "st_csrc", "label": "stg_edfi_component_src", "posLabel": "#14", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "f_comp", "label": "fact_miread_student_assessment_component", "posLabel": "#15–#17", "kind": "plat", "note": "3 statements", "grp": 1, "stg": false}, {"id": "st_roll", "label": "stg_edfi_component_rollup", "posLabel": "#19", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "f_mra_upd", "label": "fact_miread_student_assessment", "posLabel": "#20", "kind": "plat", "note": "rollup update", "grp": 1, "badge": {"c": "t"}, "stg": false}, {"id": "pt_ctx", "label": "pt_ctx_sd1", "posLabel": "#21", "kind": "stg", "note": "session temp", "grp": 1, "stg": true}, {"id": "f_ctx", "label": "fact_miread_student_context", "posLabel": "#23", "kind": "plat", "note": "", "grp": 1, "stg": false}, {"id": "t_disc", "label": "tmp_discipline_json", "posLabel": "#24", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "t_ret", "label": "tmp_retention_json", "posLabel": "#25", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "t_comp", "label": "tmp_components_json", "posLabel": "#26", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "t_assess", "label": "tmp_assessments_json", "posLabel": "#27", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "t_enr", "label": "tmp_enrollments_json", "posLabel": "#28", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "t_year", "label": "tmp_year_block_json", "posLabel": "#29", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "t_hist", "label": "tmp_history_timeline_json", "posLabel": "#30", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "f_ctx_enr", "label": "fact_miread_student_context_enriched", "posLabel": "#31", "kind": "plat", "note": "", "grp": 1, "stg": false}, {"id": "st_dist", "label": "stg_miread_district_assessment", "posLabel": "#35", "kind": "stg", "note": "", "grp": 1, "stg": true}, {"id": "c_mra", "label": "curated_miread_district_assessment", "posLabel": "#36", "kind": "cur", "note": "", "grp": 1, "stg": false}, {"id": "c_disc", "label": "curated_student_discipline", "posLabel": "#33", "kind": "cur", "note": "", "grp": 4, "stg": false}, {"id": "c_enr", "label": "curated_enrollment_history", "posLabel": "#34", "kind": "cur", "note": "", "grp": 4, "stg": false}], "edges": [["p_base", "p_scores"], ["p_scores", "p_parent"], ["p_scores", "p_obj"], ["p_parent", "p_obj"], ["p_scores", "p_nwealvl"], ["dim_lit", "p_pat"], ["dim_lit", "p_ckey"], ["p_obj", "p_ckey"], ["p_acad", "p_ckey"], ["p_nwea", "p_ckey"], ["p_star", "p_ckey"], ["p_pat", "p_ckey"], ["p_parent", "st_mras"], ["st_mras", "f_mra_ins"], ["dim_vendor", "f_mra_ins"], ["dim_period", "f_mra_ins"], ["dim_prof", "f_mra_ins"], ["p_foa", "st_csrc"], ["p_obj", "st_csrc"], ["st_mras", "st_csrc"], ["f_mra_ins", "st_csrc"], ["dim_vendor", "st_csrc"], ["dim_period", "st_csrc"], ["dim_lit", "st_csrc"], ["p_ckey", "st_csrc"], ["st_csrc", "f_comp"], ["dim_vendor", "f_comp"], ["dim_period", "f_comp"], ["dim_lit", "f_comp"], ["f_mra_ins", "f_comp"], ["f_comp", "st_roll"], ["f_mra_ins", "st_roll"], ["dim_vendor", "st_roll"], ["st_roll", "f_mra_upd"], ["f_mra_ins", "f_mra_upd"], ["f_mra_ins", "pt_ctx"], ["pt_ctx", "f_ctx"], ["f_comp", "t_comp"], ["t_comp", "t_assess"], ["f_mra_ins", "t_assess"], ["t_assess", "t_year"], ["t_enr", "t_year"], ["t_year", "t_hist"], ["f_ctx", "f_ctx_enr"], ["t_disc", "f_ctx_enr"], ["t_ret", "f_ctx_enr"], ["t_hist", "f_ctx_enr"], ["f_roster", "c_roster"], ["p_disc", "c_disc"], ["p_enr", "c_enr"], ["f_mra_upd", "st_dist"], ["f_comp", "st_dist"], ["dim_lit", "st_dist"], ["st_dist", "c_mra"], ["st_ewgp", "st_ewgy"], ["st_ewgp", "f_ew"], ["st_ewgy", "f_ew"], ["f_ew", "c_ew"]]};
+
+/* inventory table */
+/* Direct readers of each platinum table. p = other platinum tables (platinum staging resolved to the table it feeds; computed from the DAG below),
+   a = API routes and DynamoDB publisher jobs (routes from the handler routers in maisa-consumption-api, publishers from amorphic-cicd/etl/ddb_publish). */
+var CONSUMERS={
+  curated_district_roster:{"p":[],"a":["/app/district/roster","ddb_publish_roster","ddb_publish_resolve_schools"]},
+  curated_enrollment_history:{"p":[],"a":["/app/student/enrollment/history"]},
+  curated_ewims_student_early_warn_incidents_actions:{"p":[],"a":["/miewims/district/earlywarning","/miewims/district/earlywarning/summary","/miewims/student/earlywarning","ddb_publish_ew","ddb_publish_ewdistrict","ddb_publish_ewsummary","ddb_publish_resolve_schools"]},
+  curated_miread_district_assessment:{"p":[],"a":["/miread/district/assessment","ddb_publish_assess"]},
+  curated_student_discipline:{"p":[],"a":["/app/student/discipline"]},
+  dim_ewims_indicator_domain:{"p":[],"a":[]},
+  dim_ewims_status_threshold:{"p":[],"a":[]},
+  dim_ewims_time_period_type:{"p":[],"a":[]},
+  dim_miread_assessment_period:{"p":["fact_miread_student_assessment","fact_miread_student_assessment_component"],"a":[]},
+  dim_miread_assessment_vendor:{"p":["fact_miread_student_assessment","fact_miread_student_assessment_component"],"a":[]},
+  dim_miread_literacy_component:{"p":["curated_miread_district_assessment","fact_miread_student_assessment_component"],"a":[]},
+  dim_miread_proficiency_level:{"p":["fact_miread_student_assessment"],"a":[]},
+  fact_ewims_student_early_warning:{"p":["curated_ewims_student_early_warn_incidents_actions"],"a":[]},
+  fact_miread_student_assessment:{"p":["curated_miread_district_assessment","fact_miread_student_assessment_component","fact_miread_student_context","fact_miread_student_context_enriched"],"a":[]},
+  fact_miread_student_assessment_component:{"p":["curated_miread_district_assessment","fact_miread_student_assessment","fact_miread_student_context_enriched"],"a":[]},
+  fact_miread_student_context:{"p":["fact_miread_student_context_enriched"],"a":[]},
+  fact_miread_student_context_enriched:{"p":[],"a":["/miread/student/context"]},
+  fact_teacher_roster:{"p":["curated_district_roster"],"a":[]}
+};
+var CTAG=[["p","PLAT","Read by another platinum table or one of its staging tables"],["a","API","Read by the API or a DynamoDB publisher"]];
+function consumerTags(t){   /* one tag per table: PLAT, API or NONE; hover a tag to see who reads the table */
+  var c=CONSUMERS[t]||{},out="";
+  CTAG.forEach(function(k){
+    var n=c[k[0]]||[];
+    if(n.length)out+='<span class="ctag '+k[0]+'" tabindex="0" title="'+esc(k[2]+": "+n.join(", "))+'">'+k[1]+'</span>';
+  });
+  return '<div class="ctags">'+(out||'<span class="ctag n" tabindex="0" title="No reader in this repository: no platinum table, API route or DynamoDB publisher reads this table">NONE</span>')+'</div>';
+}
+document.getElementById("inv").innerHTML='<colgroup><col style="width:24%"><col style="width:29%"><col style="width:25%"><col style="width:14%"><col style="width:8%"></colgroup><thead><tr><th>Table</th><th>Current driving key</th><th>Current build shape</th><th>Write pattern</th><th>Consumers*</th></tr></thead><tbody>'+
+  INVENTORY.map(function(r){
+    return '<tr><td>'+esc(r[0]).replace(/_/g,"_<wbr>")+'</td><td class="dk">'+esc(r[1])+'</td><td class="pk">'+esc(r[2])+'</td><td class="pk">'+esc(r[3])+'</td><td>'+consumerTags(r[0])+'</td></tr>';
+  }).join("")+'</tbody>';
+
+/* layers: longest path from a node with no readers it depends on */
+(function(){
+  var preds={},lvl={};
+  DAG.nodes.forEach(function(n){preds[n.id]=[];});
+  DAG.edges.forEach(function(e){preds[e[1]].push(e[0]);});
+  function L(id){if(lvl[id]!==undefined)return lvl[id];var m=-1;preds[id].forEach(function(p){m=Math.max(m,L(p));});return lvl[id]=m+1;}
+  DAG.nodes.forEach(function(n){n.level=L(n.id);});
+  /* nodes that read nothing (and are not seed dimensions) sit just before their first reader, so wires stay short */
+  var succ={};DAG.nodes.forEach(function(n){succ[n.id]=[];});
+  DAG.edges.forEach(function(e){succ[e[0]].push(e[1]);});
+  var byId={};DAG.nodes.forEach(function(n){byId[n.id]=n;});
+  DAG.nodes.forEach(function(n){
+    if(n.grp===0||preds[n.id].length||!succ[n.id].length)return;
+    var m=Infinity;succ[n.id].forEach(function(c){m=Math.min(m,byId[c].level);});
+    n.level=Math.max(0,m-1);
+  });
+})();
+
+/* steps drawn on a wire: the table on the right is built from the one on the left by this step instead of by a SQL statement */
+var STEPS={"f_ew>c_ew":"Spark"};
+
+/* order the boxes inside each lane and layer to reduce crossing wires: sort by the average position of the neighbours, no-reader tables last */
+function orderNodes(D){
+  var byId={},preds={},succs={},cells={},pos={},orig={};
+  D.nodes.forEach(function(n,i){byId[n.id]=n;preds[n.id]=[];succs[n.id]=[];orig[n.id]=i;});
+  D.edges.forEach(function(e){succs[e[0]].push(e[1]);preds[e[1]].push(e[0]);});
+  D.nodes.forEach(function(n){var k=n.grp+":"+n.level;(cells[k]=cells[k]||[]).push(n);});
+  function setPos(k){cells[k].forEach(function(n,i){pos[n.id]=(i+.5)/cells[k].length;});}
+  Object.keys(cells).forEach(setPos);
+  function bary(n,dir){
+    var nb=(dir<0?preds[n.id]:succs[n.id]).filter(function(i){return n.grp===0||byId[i].grp===n.grp;});
+    return nb.length?nb.reduce(function(a,i){return a+pos[i];},0)/nb.length:pos[n.id];
+  }
+  var maxL=0;D.nodes.forEach(function(n){if(n.level>maxL)maxL=n.level;});
+  function sweep(dir){
+    for(var L=dir<0?1:maxL-1;dir<0?L<=maxL:L>=0;L+=dir<0?1:-1){
+      [0,1,2,3,4].forEach(function(g){
+        var k=g+":"+L;if(!cells[k])return;
+        var b={};cells[k].forEach(function(n){b[n.id]=bary(n,dir);});
+        cells[k].sort(function(x,y){
+          var nx=x.note==="no readers"?1:0,ny=y.note==="no readers"?1:0;
+          return nx-ny||b[x.id]-b[y.id]||orig[x.id]-orig[y.id];
+        });
+        setPos(k);
+      });
+    }
+  }
+  for(var it=0;it<6;it++){sweep(-1);sweep(1);}
+  var seedK="0:0";   /* seed dimensions follow their readers */
+  if(cells[seedK]){var sb={};cells[seedK].forEach(function(n){sb[n.id]=bary(n,1);});cells[seedK].sort(function(x,y){return (x.note==="no readers"?1:0)-(y.note==="no readers"?1:0)||sb[x.id]-sb[y.id]||orig[x.id]-orig[y.id];});}
+  var out=[];Object.keys(cells).sort().forEach(function(k){out=out.concat(cells[k]);});
+  D.nodes=out;
+}
+
+function buildDag(host,D){
+  orderNodes(D);
+  var wrap=el("div","dag"),cols=el("div","dagcols lanes"),svg=document.createElementNS("http://www.w3.org/2000/svg","svg"),boxes={},maxL=0;
+  svg.setAttribute("class","wires");cols.appendChild(svg);
+  D.nodes.forEach(function(n){if(n.level>maxL)maxL=n.level;});
+  var N=maxL+1,LANES=["Seed dimensions","MiRead","EWIMS","Roster","Student detail"];
+  cols.style.minWidth=(N*168)+"px";
+  var hdr=el("div","lanerow lh");hdr.style.gridTemplateColumns="repeat("+N+",minmax(0,1fr))";
+  for(var h=0;h<N;h++)hdr.appendChild(el("div","grp","layer "+h));
+  cols.appendChild(hdr);
+  LANES.forEach(function(name,gi){
+    var inLane=D.nodes.filter(function(n){return n.grp===gi;});
+    if(!inLane.length)return;
+    cols.appendChild(el("div","lane",esc(name)));
+    var row=el("div","lanerow");row.style.gridTemplateColumns="repeat("+N+",minmax(0,1fr))";
+    for(var L=0;L<N;L++){
+      var cell=el("div","cell");
+      inLane.filter(function(n){return n.level===L;}).forEach(function(n){
+        var tags=((CONSUMERS[n.label]&&CONSUMERS[n.label].a.length)?'<span class="ctag a">API</span>':"");
+        var b=el("div","box "+(n.kind==="stg"?"stg":"plat"),esc(n.label).replace(/_/g,"_<wbr>")+"<small>"+(n.note?esc(n.note)+" · ":"")+"today "+esc(n.posLabel)+"</small>"+(tags?'<div class="tgs">'+tags+'</div>':""));
+        b.dataset.id=n.id;if(n.grp===0)b.dataset.seed="1";b.tabIndex=0;boxes[n.id]=b;if(n.badge)b.appendChild(el("span","bdg "+n.badge.c));cell.appendChild(b);
+      });
+      row.appendChild(cell);
+    }
+    cols.appendChild(row);
+  });
+  wrap.appendChild(cols);host.appendChild(wrap);
+  var paths=[];
+  function draw(){
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var cr=cols.getBoundingClientRect();if(!cr.width)return;
+    svg.setAttribute("viewBox","0 0 "+cr.width+" "+cr.height);paths=[];
+    D.edges.forEach(function(e){
+      var A=boxes[e[0]],B=boxes[e[1]];if(!A||!B)return;
+      var a=A.getBoundingClientRect(),b=B.getBoundingClientRect();
+      var x1=a.right-cr.left,y1=a.top+a.height/2-cr.top,x2=b.left-cr.left,y2=b.top+b.height/2-cr.top,dx=Math.max(24,(x2-x1)*.5);
+      var p=document.createElementNS("http://www.w3.org/2000/svg","path");
+      p.setAttribute("class","w j"+(A.dataset.seed?" seed":""));p.setAttribute("d","M"+x1+" "+y1+" C"+(x1+dx)+" "+y1+","+(x2-dx)+" "+y2+","+x2+" "+y2);
+      svg.appendChild(p);
+      var mk=null;
+      if(STEPS[e[0]+">"+e[1]]){
+        mk=document.createElementNS("http://www.w3.org/2000/svg","g");mk.setAttribute("class","emark");
+        var mx=(x1+x2)/2,my=(y1+y2)/2,r=document.createElementNS("http://www.w3.org/2000/svg","rect"),t=document.createElementNS("http://www.w3.org/2000/svg","text");
+        r.setAttribute("x",mx-17);r.setAttribute("y",my-7);r.setAttribute("width",34);r.setAttribute("height",14);r.setAttribute("rx",7);
+        t.setAttribute("x",mx);t.setAttribute("y",my);t.textContent=STEPS[e[0]+">"+e[1]];
+        mk.appendChild(r);mk.appendChild(t);svg.appendChild(mk);
+      }
+      paths.push({e:e,p:p,m:mk});
+    });
+  }
+  function trace(id){
+    var keep={};
+    if(id){
+      keep[id]=1;var up=[id],ch;
+      do{ch=false;D.edges.forEach(function(e){if(keep[e[1]]&&!keep[e[0]]&&up.indexOf(e[1])>-1){keep[e[0]]=1;up.push(e[0]);ch=true;}});}while(ch);
+      var dn=[id];
+      do{ch=false;D.edges.forEach(function(e){if(keep[e[0]]&&!keep[e[1]]&&dn.indexOf(e[0])>-1){keep[e[1]]=1;dn.push(e[1]);ch=true;}});}while(ch);
+    }
+    Object.keys(boxes).forEach(function(k){boxes[k].classList.toggle("dim",!!id&&!keep[k]);});
+    paths.forEach(function(x){var on=!id||(keep[x.e[0]]&&keep[x.e[1]]);x.p.classList.toggle("dim",!on);x.p.classList.toggle("on",!!id&&!!on);if(x.m)x.m.classList.toggle("dim",!on);});
+  }
+  Object.keys(boxes).forEach(function(k){
+    var b=boxes[k];
+    b.onmouseenter=function(){trace(k);};b.onmouseleave=function(){trace(null);};
+    b.onfocus=function(){trace(k);};b.onblur=function(){trace(null);};
+  });
+  if(window.ResizeObserver)new ResizeObserver(draw).observe(cols);
+  window.addEventListener("resize",draw);
+  draw();
+}
+buildDag(document.getElementById("v-dag"),DAG);
+
+/* side navigation, built from the headings; same behaviour as the gold derived page */
+(function(){
+  var toc=document.getElementById("toc");if(!toc)return;
+  var items=[],ul=document.createElement("ul");
+  document.querySelectorAll("#home .hsec").forEach(function(sec){
+    var h2=sec.querySelector("h2");if(!h2||!sec.id)return;
+    var hc=h2.cloneNode(true);hc.querySelectorAll(".draft").forEach(function(x){x.remove();});
+    add(sec,hc.textContent.trim(),"l2");
+    sec.querySelectorAll("h3.hsub").forEach(function(h,i){
+      var c=h.cloneNode(true);c.querySelectorAll(".ptag").forEach(function(x){x.remove();});
+      if(!h.id)h.id=sec.id+"-h"+i;
+      add(h,c.textContent.trim(),"l3");
+    });
+  });
+  function add(target,label,cls){
+    var li=document.createElement("li"),a=document.createElement("a");
+    li.className=cls;a.href="#"+(target.id||"");a.className=cls;a.textContent=label;
+    var it={t:target,a:a};
+    a.addEventListener("click",function(e){e.preventDefault();setNav(false);locked=it;mark(it);target.scrollIntoView({behavior:"smooth",block:"start"});});
+    li.appendChild(a);ul.appendChild(li);items.push(it);
+  }
+  toc.innerHTML='<p class="th">On this page</p>';toc.appendChild(ul);
+  var nb=document.getElementById("navbtn");
+  function setNav(open){document.body.classList.toggle("navopen",open);if(nb){nb.setAttribute("aria-expanded",String(open));nb.setAttribute("aria-label",open?"Close page navigation":"Open page navigation");}}
+  if(nb){
+    nb.addEventListener("click",function(e){e.stopPropagation();setNav(!document.body.classList.contains("navopen"));});
+    document.addEventListener("click",function(e){if(document.body.classList.contains("navopen")&&!toc.contains(e.target))setNav(false);});
+    document.addEventListener("keydown",function(e){if(e.key==="Escape")setNav(false);});
+    window.addEventListener("resize",function(){if(innerWidth>=1100)setNav(false);});
+  }
+  var tick=false,locked=null;
+  function mark(cur){items.forEach(function(it){it.a.classList.toggle("on",it===cur);});}
+  function spy(){
+    tick=false;if(locked)return;
+    var cur=items[0]||null;
+    items.forEach(function(it){if(it.t.getBoundingClientRect().top<=110)cur=it;});
+    mark(cur);
+  }
+  ["wheel","touchmove","keydown"].forEach(function(ev){window.addEventListener(ev,function(){if(locked){locked=null;spy();}},{passive:true});});
+  window.addEventListener("scroll",function(){if(!tick){tick=true;requestAnimationFrame(spy);}},{passive:true});
+  spy();
+})();
+
+document.querySelector(".brand").addEventListener("click",function(e){e.preventDefault();window.scrollTo({top:0,behavior:"smooth"});});
+
+/* theme */
+var root=document.documentElement;
+document.getElementById("theme").onclick=function(){
+  var dark=root.getAttribute("data-theme")==="dark"||(!root.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme:dark)").matches);
+  root.setAttribute("data-theme",dark?"light":"dark");
+};
+})();
+</script>
+</body>
+</html>
