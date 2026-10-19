@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Platinum Current State Analysis</title>
 <!--
-  Sibling of index.html (gold derived). The stylesheet below is copied from index.html so the two pages match;
+  Sibling of derived.html (gold derived). The stylesheet below is copied from derived.html so the two pages match;
   the rest is specific to platinum. Edit data in the INVENTORY and DAG blocks at the bottom of the file.
   Findings come from the SQL and the repository only; nothing was checked in data.
 -->
@@ -479,8 +479,7 @@ ul.lo li.grp .no{width:0}
     <h2>Current State</h2>
 
     <h3 class="hsub">Table Inventory</h3>
-    <p>All 18 platinum tables, with their current driving key, build shape and consumers. The write pattern shows how a table is loaded today: seed dimensions and most facts insert a key once, four curated tables are written with <code>MERGE</code>, and the EWIMS curated table is rebuilt by a PySpark step. Which platinum tables read each gold derived table is shown in the Consumers row of each table page on the
-      <a href="index.html">gold derived page</a>; the dependencies between platinum tables are in Solution Design below.</p>
+    <p>All 18 platinum tables, with their current driving key, build shape and consumers. The write pattern shows how a table is loaded today: seed dimensions and most facts insert a key once, four curated tables are written with <code>MERGE</code>, and the EWIMS curated table is rebuilt by a PySpark step.</p>
     <div class="tblwrap2"><table class="dsrc inv" id="inv"></table></div>
     <p class="tcap">* Consumers are the layers that read a table directly: another platinum table or one of its staging tables (PLAT), or the API, which includes the DynamoDB publishers (API). NONE means nothing reads the table. Hover a tag to see which readers.</p>
 
